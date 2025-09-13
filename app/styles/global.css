@@ -1,3 +1,84 @@
+/* app/styles/globals.css - Thêm vào file CSS chính */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Fix input text color */
+@layer base {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  select,
+  textarea {
+    color: #374151; /* text-gray-700 - màu chữ đậm */
+    background-color: #ffffff; /* bg-white */
+  }
+  
+  input[type="text"]::placeholder,
+  input[type="email"]::placeholder,
+  input[type="password"]::placeholder,
+  input[type="search"]::placeholder,
+  textarea::placeholder {
+    color: #9ca3af; /* text-gray-400 - placeholder màu xám nhạt */
+    opacity: 1;
+  }
+  
+  /* Dark mode support */
+  .dark input[type="text"],
+  .dark input[type="email"],
+  .dark input[type="password"],
+  .dark input[type="search"],
+  .dark select,
+  .dark textarea {
+    color: #f9fafb; /* text-gray-50 */
+    background-color: #374151; /* bg-gray-700 */
+    border-color: #4b5563; /* border-gray-600 */
+  }
+  
+  .dark input[type="text"]::placeholder,
+  .dark input[type="email"]::placeholder,
+  .dark input[type="password"]::placeholder,
+  .dark input[type="search"]::placeholder,
+  .dark textarea::placeholder {
+    color: #6b7280; /* text-gray-500 */
+  }
+}
+
+/* Component styles cho các input trong forms */
+@layer components {
+  .form-input {
+    @apply appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm;
+    @apply text-gray-900 placeholder-gray-400 bg-white;
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+    @apply sm:text-sm transition-colors duration-200;
+  }
+  
+  .form-input.error {
+    @apply border-red-300 focus:ring-red-500 focus:border-red-500;
+  }
+  
+  .form-input:disabled {
+    @apply bg-gray-100 text-gray-500 cursor-not-allowed;
+  }
+  
+  /* Select dropdown */
+  .form-select {
+    @apply form-input;
+    @apply bg-white bg-no-repeat bg-right pr-8;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-size: 1.5em 1.5em;
+  }
+  
+  /* Search input */
+  .search-input {
+    @apply form-input pl-10;
+  }
+  
+  /* Password input với toggle button */
+  .password-input {
+    @apply form-input pr-10;
+  }
+}
