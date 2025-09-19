@@ -9,10 +9,10 @@ export default defineConfig({
     devSourcemap: true
   },
   server: {
-    port: 3000
+    port: process.env.VITE_PORT ? parseInt(process.env.VITE_PORT) : 3000
   },
   preview: {
-    port: 3000
+    port: process.env.VITE_PORT ? parseInt(process.env.VITE_PORT) : 3000
   },
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths(), devtoolsJson()]
 })
