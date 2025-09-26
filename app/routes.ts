@@ -1,29 +1,18 @@
-import { type RouteConfig, index, route } from '@react-router/dev/routes';
-import ProtectedRoute from '~/components/ProtectedRoute';
-
-// Import pages trực tiếp
-import HomePage from '~/routes/home';
-import LoginPage from '~/routes/auth/login';
-import RegisterPage from '~/routes/auth/register';
-import ForgotPasswordPage from '~/routes/auth/forgot-password';
-import ResetPasswordPage from '~/routes/auth/reset-password';
-import VerifyEmailPage from '~/routes/auth/verify-email';
-import DashboardLayout from '~/routes/dashboard/_layout';
+import { type RouteConfig, index, route } from '@react-router/dev/routes'
 
 export default [
-  index(() => <HomePage />),
+  index('routes/home.tsx'),
+  // Auth routes
+  route('login', 'routes/auth/login.tsx'),
+  route('register', 'routes/auth/register.tsx'),
+  route('forgot-password', 'routes/auth/forgot-password.tsx'),
+  route('reset-password', 'routes/auth/reset-password.tsx'),
+  route('verify-email', 'routes/auth/verify-email.tsx'),
+  // Dashboard and nested routes
 
-  // Auth
-  route('login', () => <LoginPage />),
-  route('register', () => <RegisterPage />),
-  route('forgot-password', () => <ForgotPasswordPage />),
-  route('reset-password', () => <ResetPasswordPage />),
-  route('verify-email', () => <VerifyEmailPage />),
+  //Courses routes
+  route('courses', 'routes/course/_index.tsx'),
+  // route('courses', 'routes/courses/_layout.tsx', [
 
-  // Protected Dashboard
-  route('dashboard', () => (
-    <ProtectedRoute>
-      <DashboardLayout />
-    </ProtectedRoute>
-  )),
-] satisfies RouteConfig;
+  route('dashboard', 'routes/dashboard/_layout.tsx')
+] satisfies RouteConfig

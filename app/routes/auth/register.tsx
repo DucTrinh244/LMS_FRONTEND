@@ -164,7 +164,7 @@ const Register: React.FC = () => {
                     onChange={handleChange}
                     className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                       errors.firstName ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-                    }`}
+                    } text-gray-900`}
                     placeholder="John"
                   />
                   {errors.firstName && (
@@ -187,7 +187,7 @@ const Register: React.FC = () => {
                     onChange={handleChange}
                     className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                       errors.lastName ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-                    }`}
+                    } text-gray-900`}
                     placeholder="Doe"
                   />
                   {errors.lastName && (
@@ -212,7 +212,7 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                     errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-                  }`}
+                  } text-gray-900`}
                   placeholder="john@example.com"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
@@ -237,7 +237,7 @@ const Register: React.FC = () => {
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
                 >
                   <option value="student">Student</option>
                   <option value="instructor">Instructor</option>
@@ -260,7 +260,7 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                     errors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-                  }`}
+                  } text-gray-900`}
                   placeholder="Create a strong password"
                 />
                 <button
@@ -322,7 +322,7 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                     errors.confirmPassword ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-                  }`}
+                  } text-gray-900`}
                   placeholder="Confirm your password"
                 />
                 <button
