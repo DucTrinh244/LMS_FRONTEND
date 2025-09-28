@@ -1,82 +1,59 @@
-// app/contexts/AuthContext.tsx
-import React, { createContext, useEffect, useState } from "react";
-
-interface User {
-  id: string;
-  name: string;
-  role: "student" | "instructor" | "admin";
-}
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import { authService } from '~/services/auth/auth'
+import type { LoginRequest, RegisterRequest, User } from '~/types/auth'
 
 interface AuthContextType {
-  user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  login: (user: User, accessToken: string, refreshToken: string) => void;
-  logout: () => void;
-  refreshAccessToken: () => Promise<void>;
+  user: User | null
+  login: (data: LoginRequest) => Promise<void>
+  register: (data: RegisterRequest) => Promise<void>
+  logout: () => void
 }
 
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  accessToken: null,
-  refreshToken: null,
-  login: () => {},
-  logout: () => {},
-  refreshAccessToken: async () => {},
-});
+const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null)
 
-  const login = (userData: User, access: string, refresh: string) => {
-    setUser(userData);
-    setAccessToken(access);
-    setRefreshToken(refresh);
-    localStorage.setItem("accessToken", access);
-    localStorage.setItem("refreshToken", refresh);
-  };
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken')
+    if (accessToken) {
+      authService.getProfile().then(res => setUser(res.user)).catch(() => logout())
+    }
+  }, [])
+
+  const login = async (data:LoginRequest) => {
+    const res = await authService.login( data)
+    if (res.isSuccess && res.value) {
+      localStorage.setItem('accessToken', res.value.accessToken)
+      localStorage.setItem('refreshToken', res.value.refreshToken)
+      setUser(res.value.user)
+    } else {
+      throw new Error(res.error?.message)
+    }
+  }
+
+  const register = async (data: RegisterRequest) => {
+    const res = await authService.register(data)
+    if (res.isSuccess && res.value) {
+      localStorage.setItem('accessToken', res.value.accessToken)
+      localStorage.setItem('refreshToken', res.value.refreshToken)
+      setUser(res.value.user)
+    } else {
+      throw new Error(res.error?.message)
+    }
+  }
 
   const logout = () => {
-    setUser(null);
-    setAccessToken(null);
-    setRefreshToken(null);
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-  };
-
-  // Load token từ localStorage khi app load
-  useEffect(() => {
-    const savedAccess = localStorage.getItem("accessToken");
-    const savedRefresh = localStorage.getItem("refreshToken");
-    if (savedAccess && savedRefresh) {
-      setAccessToken(savedAccess);
-      setRefreshToken(savedRefresh);
-      // TODO: gọi API lấy user info từ accessToken
-    }
-  }, []);
-
-  const refreshAccessToken = async () => {
-    if (!refreshToken) return;
-    try {
-      const res = await fetch("/api/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-      const data = await res.json();
-      setAccessToken(data.accessToken);
-      localStorage.setItem("accessToken", data.accessToken);
-    } catch (err) {
-      console.error("Cannot refresh token", err);
-      logout();
-    }
-  };
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    setUser(null)
+  }
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, refreshToken, login, logout, refreshAccessToken }}>
+    <AuthContext.Provider value={{ user, login, logout, register }}>
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}
+
+export const useAuth = () => useContext(AuthContext)

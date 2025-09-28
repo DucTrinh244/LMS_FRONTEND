@@ -1,6 +1,7 @@
 // app/routes/login.tsx
 import React, { useState } from 'react';
 import { Link } from 'react-router';
+import { authService } from '~/services/auth/auth';
 
 interface LoginFormData {
   email: string;
@@ -55,7 +56,7 @@ const Login: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await authService.login(formData);
       console.log('Login successful:', formData);
     } catch (error) {
       console.error('Login failed:', error);
