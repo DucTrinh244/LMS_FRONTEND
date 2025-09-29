@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { authService } from '~/services/auth/auth'
-import type { LoginRequest, RegisterRequest, User } from '~/types/auth'
+import type { User } from '~/types/auth/entities'
+import type { LoginRequest, } from '~/types/auth/login'
+import type { RegisterRequest } from '~/types/auth/register'
 
 interface AuthContextType {
   user: User | null
@@ -9,7 +11,7 @@ interface AuthContextType {
   logout: () => void
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType)
+export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)

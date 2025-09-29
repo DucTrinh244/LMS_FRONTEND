@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SignOutButton from '~/components/auth/SignOutButton';
 
 // Mock data for demo
 const mockUser = {
@@ -312,9 +313,7 @@ const Header: React.FC<HeaderProps> = ({ user, onToggleSidebar }) => {
                       <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
                       <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
                       <hr className="my-1" />
-                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        Sign out
-                      </button>
+                        <SignOutButton />
                     </div>
                   </div>
                 )}

@@ -1,15 +1,14 @@
 // app/routes/login.tsx
 import React, { useState } from 'react';
-import { Link } from 'react-router';
-import { authService } from '~/services/auth/auth';
+import { Link, useNavigate } from 'react-router';
+import { useAuth } from '~/context/authContext';
+import type { LoginFormData } from '~/types/auth/login';
+import { mapFormDataToLoginRequest } from '~/utils/helpers/AuthHeper';
 
-interface LoginFormData {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
 
 const Login: React.FC = () => {
+  const {login} = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
@@ -53,11 +52,14 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+  console.log('Submit clicked'); // Debug 1
 
     setIsLoading(true);
     try {
-      await authService.login(formData);
+      const LoginRequest = mapFormDataToLoginRequest(formData);
+      await login(LoginRequest);
       console.log('Login successful:', formData);
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
       setErrors({ email: 'Invalid email or password' });

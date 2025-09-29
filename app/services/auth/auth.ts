@@ -1,5 +1,6 @@
 import httpClient from '~/services/httpClient'
-import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from '~/types/auth'
+import type { LoginRequest, LoginResponse } from '~/types/auth/login'
+import type { RegisterRequest, RegisterResponse } from '~/types/auth/register'
 
 // AXIOS INSTANCE
 export const authService = {

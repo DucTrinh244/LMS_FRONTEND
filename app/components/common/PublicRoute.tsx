@@ -2,12 +2,12 @@ import type { ReactNode } from "react";
 import { Navigate } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
 
-interface ProtectedRouteProps {
+interface PublicRouteProps {
   children: ReactNode;
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+export const PublicRoute = ({ children }: PublicRouteProps) => {
   const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
+  if (user) return <Navigate to="/dashboard" replace />; // hoặc homepage
   return <>{children}</>;
 };

@@ -1,5 +1,6 @@
 // src/utils/authHelpers.ts
-import type { RegisterFormData, RegisterRequest } from '~/types/auth'
+import type { LoginFormData, LoginRequest } from '~/types/auth/login'
+import type { RegisterFormData, RegisterRequest } from '~/types/auth/register'
 
 export function genderToNumber(gender: 'male' | 'female' | 'other' | ''): number {
   switch (gender) {
@@ -24,5 +25,13 @@ export function mapFormDataToRegisterRequest(formData: RegisterFormData): Regist
     phone: formData.phone,
     dateOfBirth: formData.birthday,
     gender: genderToNumber(formData.gender)
+  }
+}
+
+export function mapFormDataToLoginRequest(formData: LoginFormData): LoginRequest {
+  return {
+    email: formData.email,
+    password: formData.password,
+    rememberMe: formData.rememberMe
   }
 }

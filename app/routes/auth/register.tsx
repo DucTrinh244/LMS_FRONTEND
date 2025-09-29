@@ -1,13 +1,13 @@
 // app/routes/register.tsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { authService } from '~/services/auth/auth';
-import type { RegisterFormData } from '~/types/auth';
+import { useAuth } from '~/context/authContext';
+import type { RegisterFormData } from '~/types/auth/register';
 import { mapFormDataToRegisterRequest } from '~/utils/helpers/AuthHeper';
 
 
-
 const Register: React.FC = () => {
+  const { register } = useAuth();
   const [formData, setFormData] = useState<RegisterFormData>({
     firstName: '',
     lastName: '',
@@ -120,12 +120,12 @@ const Register: React.FC = () => {
     
     try {
       const registerRequest = mapFormDataToRegisterRequest(formData);
-      await authService.register(registerRequest);
+      await register(registerRequest);
       console.log('Registration successful:', formData);
-      navigate('/login')
+      navigate('/dashboard');
     } catch (error) {
       console.error('Registration failed:', error);
-      // setErrors({ email: 'An account with this email already exists' });
+      setErrors({ email: 'An account with this email already exists' });
     } finally {
       setIsLoading(false);
     }
