@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SignOutButton from '~/components/auth/SignOutButton';
+import SignOutButton from '~/shared/components/auth/SignOutButton';
 
 // Mock data for demo
 const mockUser = {
