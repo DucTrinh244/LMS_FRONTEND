@@ -2,7 +2,7 @@ import { type RouteConfig, index, route } from '@react-router/dev/routes'
 
 export default [
   // index('routes/home.tsx'),
-  index('pages/homePage.tsx'),
+  index('module/landing/pages/homePage.tsx'),
   // Auth routes
   route('login', 'module/auth/pages/login.tsx'),
   route('register', 'module/auth/pages/register.tsx'),
@@ -15,8 +15,7 @@ export default [
   route('courses', 'module/course/pages/_index.tsx'),
   // route('courses', 'routes/courses/_layout.tsx', [
 
-  route('dashboard', 'module/student/pages/_layout.tsx'),
-  route('index', 'routes/index.tsx')
+  route('dashboard', 'module/student/pages/_layout.tsx')
 
   // <Route />
 ] satisfies RouteConfig
