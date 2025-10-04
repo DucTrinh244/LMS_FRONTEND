@@ -1,8 +1,8 @@
 // app/routes/home.tsx
 import { Link } from 'react-router'
-import type { Route } from './+types/home'
+// Remove the problematic import and use a generic argument type for meta
 
-export function meta({}: Route.MetaArgs) {
+export function meta({}: { [key: string]: any }) {
   return [
     { title: 'LMS - Hệ thống quản lý học tập' },
     { name: 'description', content: 'Trang chủ hệ thống LMS, nơi quản lý khóa học, học viên và giảng viên.' }

@@ -1,18 +1,26 @@
 import { type RouteConfig, index, route } from '@react-router/dev/routes'
 
 export default [
-  index('routes/home.tsx'),
+  // index('routes/home.tsx'),
+  index('pages/homePage.tsx'),
   // Auth routes
-  route('login', 'routes/auth/login.tsx'),
-  route('register', 'routes/auth/register.tsx'),
-  route('forgot-password', 'routes/auth/forgot-password.tsx'),
-  route('reset-password', 'routes/auth/reset-password.tsx'),
-  route('verify-email', 'routes/auth/verify-email.tsx'),
+  route('login', 'module/auth/pages/login.tsx'),
+  route('register', 'module/auth/pages/register.tsx'),
+  route('forgot-password', 'module/auth/pages/forgot-password.tsx'),
+  route('reset-password', 'module/auth/pages/reset-password.tsx'),
+  route('verify-email', 'module/auth/pages/verify-email.tsx'),
   // Dashboard and nested routes
 
   //Courses routes
-  route('courses', 'routes/course/_index.tsx'),
+  route('courses', 'module/course/pages/_index.tsx'),
   // route('courses', 'routes/courses/_layout.tsx', [
 
-  route('dashboard', 'routes/dashboard/_layout.tsx')
+  route('dashboard', 'module/student/pages/_layout.tsx'),
+  route('index', 'routes/index.tsx')
+
+  // <Route />
 ] satisfies RouteConfig
+
+// const Demo:FC  = {
+
+// }
