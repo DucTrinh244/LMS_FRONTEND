@@ -3,6 +3,10 @@ import { type RouteConfig, index, route } from '@react-router/dev/routes'
 export default [
   // index('routes/home.tsx'),
   index('module/landing/pages/homePage.tsx'),
+  // PUBLIC ROUTE
+  route('courses', 'module/landing/pages/coursePage.tsx'),
+  route('courses/detail', 'module/landing/pages/courseDetailPage.tsx'),
+
   // Auth routes
   route('login', 'module/auth/pages/login.tsx'),
   route('register', 'module/auth/pages/register.tsx'),

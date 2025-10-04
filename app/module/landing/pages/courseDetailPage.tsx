@@ -1,15 +1,15 @@
-import CourseGridPage from '~/module/landing/components/courseContent';
+import CourseDetailContent from '~/module/landing/components/CourseDetailContent';
 import Footer from '~/module/landing/components/Footer';
 import Header from '~/module/landing/components/Header';
 
-const coursePage = () => {
+const courseDetailPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <Header />
-      <CourseGridPage/>
+      <CourseDetailContent/>
         <Footer />
     </div>
   );
 };
 
-export default coursePage;
+export default courseDetailPage;
