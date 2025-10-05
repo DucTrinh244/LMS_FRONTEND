@@ -6,7 +6,9 @@ const courseDetailPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <Header />
-      <CourseDetailContent/>
+      <main className="pt-20"> {/* Adds padding-top equal to header height (80px) */}
+        <CourseDetailContent/>
+      </main>
         <Footer />
     </div>
   );

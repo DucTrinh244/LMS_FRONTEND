@@ -7,8 +7,7 @@ import {
   Heart,
   List,
   Search,
-  Star,
-  X,
+  Star
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -117,23 +116,6 @@ const CourseGridPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Header Banner */}
-      <div className="relative bg-gradient-to-r from-violet-900/50 via-purple-900/50 to-slate-900 py-16 px-4">
-        <button className="absolute top-4 right-4 w-10 h-10 bg-slate-700/50 backdrop-blur-xl border border-slate-600 rounded-full flex items-center justify-center hover:bg-violet-600/50 transition">
-          <X className="w-5 h-5 text-white" />
-        </button>
-        <div className="container mx-auto text-center">
-          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3">Course Grid</h1>
-          <div className="flex items-center justify-center gap-2 text-slate-400">
-            <a href="/" className="hover:text-violet-400 transition">Home</a>
-            <div className="w-2 h-0.5 bg-violet-500"></div>
-            <span className="font-medium">Course Grid</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Sidebar Filters */}
@@ -357,7 +339,6 @@ const CourseGridPage = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

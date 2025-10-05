@@ -1,4 +1,4 @@
-import CourseGridPage from '~/module/landing/components/courseContent';
+import BrowseCategories from '~/module/landing/components/categoryGridContenct';
 import Header from '~/module/landing/components/Header';
 import CourseGridHeader from '~/shared/components/ui/HeaderInfo';
 
@@ -8,13 +8,13 @@ const coursePage = () => {
       <Header />
          <main className="pt-20"> {/* Adds padding-top equal to header height (80px) */}
         <CourseGridHeader 
-        title="Courses"
+        title="Course Categor"
         breadcrumb={[
           { label: "Home", href: "/" },
-          { label: "Courses", href: "/courses" },
+          { label: "Course Category", href: "/courses" },
           { label: "List" }
         ]}/>
-      <CourseGridPage />
+      < BrowseCategories/>
       </main>
     </div>
   );

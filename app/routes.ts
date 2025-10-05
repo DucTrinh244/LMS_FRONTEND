@@ -5,7 +5,8 @@ export default [
   index('module/landing/pages/homePage.tsx'),
   // PUBLIC ROUTE
   route('courses', 'module/landing/pages/coursePage.tsx'),
-  route('courses/detail', 'module/landing/pages/courseDetailPage.tsx'),
+  route('course/detail', 'module/landing/pages/courseDetailPage.tsx'),
+  route('course/category', 'module/landing/pages/CategoryGridPage.tsx'),
 
   // Auth routes
   route('login', 'module/auth/pages/login.tsx'),
@@ -19,7 +20,9 @@ export default [
   route('courses', 'module/course/pages/_index.tsx'),
   // route('courses', 'routes/courses/_layout.tsx', [
 
-  route('dashboard', 'module/student/pages/_layout.tsx')
+  // STUDENT ROUTER
+  // route('dashboard', 'module/student/pages/_layout.tsx')
+  route('student/dashboard', 'module/student/pages/DashboardPage.tsx')
 
   // <Route />
 ] satisfies RouteConfig
