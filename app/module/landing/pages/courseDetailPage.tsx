@@ -1,6 +1,6 @@
 import CourseDetailContent from '~/module/landing/components/CourseDetailContent';
-import Footer from '~/module/landing/components/Footer';
-import Header from '~/module/landing/components/Header';
+import Footer from '~/shared/components/ui/Footer';
+import Header from '~/shared/components/ui/Header';
 
 const courseDetailPage = () => {
   return (

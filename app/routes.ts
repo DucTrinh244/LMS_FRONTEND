@@ -7,6 +7,8 @@ export default [
   route('courses', 'module/landing/pages/coursePage.tsx'),
   route('course/detail', 'module/landing/pages/courseDetailPage.tsx'),
   route('course/category', 'module/landing/pages/CategoryGridPage.tsx'),
+  route('instructors', 'module/landing/pages/InstructorGridPage.tsx'),
+  route('instructor/detail', 'module/landing/pages/InstructorDetailPage.tsx'),
 
   // Auth routes
   route('login', 'module/auth/pages/login.tsx'),
@@ -17,7 +19,9 @@ export default [
   // Dashboard and nested routes
 
   //Courses routes
-  route('courses', 'module/course/pages/_index.tsx'),
+  // route('courses', 'module/course/pages/_index.tsx'),
+  route('courses-resume', 'module/course/pages/CourseResumePage.tsx'),
+  route('courses-watch', 'module/course/pages/CourseWatchPage.tsx'),
   // route('courses', 'routes/courses/_layout.tsx', [
 
   // STUDENT ROUTER

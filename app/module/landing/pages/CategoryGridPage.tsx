@@ -1,5 +1,5 @@
 import BrowseCategories from '~/module/landing/components/categoryGridContenct';
-import Header from '~/module/landing/components/Header';
+import Header from '~/shared/components/ui/Header';
 import CourseGridHeader from '~/shared/components/ui/HeaderInfo';
 
 const coursePage = () => {

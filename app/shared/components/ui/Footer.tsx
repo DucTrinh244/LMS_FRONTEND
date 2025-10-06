@@ -12,7 +12,7 @@ const Footer = () => {
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="text-xl font-bold text-white">Dreams</span>
+                <span className="text-xl font-bold text-white">ZoneEdu</span>
                 <span className="text-xs text-violet-400 block -mt-0.5">Learning Platform</span>
               </div>
             </div>
@@ -77,7 +77,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-slate-500 text-sm">© 2025 Dreams LMS. All rights reserved.</p>
+          <p className="text-slate-500 text-sm">© 2025 ZoneEdu LMS. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="#terms" className="text-slate-500 hover:text-violet-400 transition text-sm">Terms</a>
             <a href="#privacy" className="text-slate-500 hover:text-violet-400 transition text-sm">Privacy</a>

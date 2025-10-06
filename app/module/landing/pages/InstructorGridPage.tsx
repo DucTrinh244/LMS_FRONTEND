@@ -1,23 +1,23 @@
-import CourseGridPage from '~/module/landing/components/courseContent';
+import InstructorContent from '~/module/landing/components/InstructorContent';
 import Header from '~/shared/components/ui/Header';
 import CourseGridHeader from '~/shared/components/ui/HeaderInfo';
 
-const coursePage = () => {
+const InstructorGridPage = () => {
   return (
     <div>
       <Header />
          <main className="pt-20"> {/* Adds padding-top equal to header height (80px) */}
         <CourseGridHeader 
-        title="Courses"
+        title="All Intructors"
         breadcrumb={[
           { label: "Home", href: "/" },
-          { label: "Courses", href: "/courses" },
+          { label: "Instructor", href: "/instructors" },
           { label: "List" }
         ]}/>
-      <CourseGridPage />
+      <InstructorContent />
       </main>
     </div>
   );
 };
 
-export default coursePage;
+export default InstructorGridPage;

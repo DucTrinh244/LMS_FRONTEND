@@ -39,10 +39,10 @@ const Header = () => {
                   <a href="/courses" className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition">
                     Courses
                   </a>
-                  <a href="course/detail" className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition">
+                  <a href="/course/detail" className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition">
                     Course Detail
                   </a>
-                  <a href="category" className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition">
+                  <a href="/course/category" className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition">
                     Category
                   </a>
                   <a href="#business" className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition">
@@ -54,16 +54,16 @@ const Header = () => {
                 </div>
               )}
             </div>
-            <a href="#instructors" className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
+            <a href="/instructors" className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
               Instructors
             </a>
-            <a href="#about" className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
+            <a href="/about" className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
               About
             </a>
-            <a href="#blog" className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
+            <a href="/blog" className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
               Blog
             </a>
-            <a href="#contact" className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
+            <a href="/contact" className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition">
               Contact
             </a>
           </nav>

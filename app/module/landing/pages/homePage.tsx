@@ -2,9 +2,9 @@ import CategoriesSection from '~/module/landing/components/CategoriesSection';
 import CoursesSection from '~/module/landing/components/CoursesSection';
 import CTASection from '~/module/landing/components/CTASection';
 import FeaturesSection from '~/module/landing/components/FeaturesSection';
-import Footer from '~/module/landing/components/Footer';
-import Header from '~/module/landing/components/Header';
 import HeroSection from '~/module/landing/components/HeroSection';
+import Footer from '~/shared/components/ui/Footer';
+import Header from '~/shared/components/ui/Header';
 
 const homePage = () => {
   return (
