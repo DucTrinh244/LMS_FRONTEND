@@ -26,8 +26,14 @@ export default [
 
   // STUDENT ROUTER
   // route('dashboard', 'module/student/pages/_layout.tsx')
-  route('student/dashboard', 'module/student/pages/DashboardPage.tsx')
+  route('student/dashboard', 'module/student/pages/DashboardPage.tsx'),
 
+  // INSTRUCTOR ROUTER
+  route('instructor/dashboard', 'module/instructor/pages/DashboardPage.tsx'),
+
+  // ADMIN ROUTER
+  route('admin/dashboard', 'module/admin/pages/DashboardPage.tsx')
+  // route('admin/users', 'module/admin/pages/UsersPage.tsx')
   // <Route />
 ] satisfies RouteConfig
 
