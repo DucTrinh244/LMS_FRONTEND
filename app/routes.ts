@@ -9,6 +9,7 @@ export default [
   route('course/category', 'module/landing/pages/CategoryGridPage.tsx'),
   route('instructors', 'module/landing/pages/InstructorGridPage.tsx'),
   route('instructor/detail', 'module/landing/pages/InstructorDetailPage.tsx'),
+  route('cart', 'module/landing/pages/CartPage.tsx'),
 
   // Auth routes
   route('login', 'module/auth/pages/login.tsx'),
