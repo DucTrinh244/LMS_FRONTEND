@@ -26,6 +26,17 @@ import {
   X
 } from 'lucide-react';
 import React, { useState, type JSX } from 'react';
+import CertificatesContent from '~/module/admin/components/CertificatesContent';
+import CoursesContent from '~/module/admin/components/CoursesContent';
+import EnrollmentsContent from '~/module/admin/components/EnrollmentsContent';
+import InstructorsContent from '~/module/admin/components/InstructorsContent';
+import MessagesContent from '~/module/admin/components/MessagesContent';
+import ReportsContent from '~/module/admin/components/ReportsContent';
+import RevenueContent from '~/module/admin/components/RevenueContent';
+import ReviewsContent from '~/module/admin/components/ReviewsContent';
+import SettingsContent from '~/module/admin/components/SettingsContent';
+import StudentsContent from '~/module/admin/components/StudentsContent';
+import UsersManagementContent from '~/module/admin/components/UsersManagementContent';
 
 // Import individual components for each menu item
 // import DashboardContent from './DashboardContent';
@@ -553,175 +564,22 @@ const DashboardContent: React.FC = () => {
 };
 
 // Example UsersManagementContent component
-const UsersManagementContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Users Management</h2>
-      <p className="text-gray-600 mb-6">Manage all users of the platform here.</p>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Name</th>
-              <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Email</th>
-              <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Role</th>
-              <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Status</th>
-              <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Example user data */}
-            <tr className="border-b border-gray-100 hover:bg-gray-50 transition">
-              <td className="py-3 px-4 text-sm text-gray-700">John Doe</td>
-              <td className="py-3 px-4 text-sm text-gray-700">john.doe@example.com</td>
-              <td className="py-3 px-4 text-sm text-gray-700">Student</td>
-              <td className="py-3 px-4">
-                <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700">
-                  Active
-                </span>
-              </td>
-              <td className="py-3 px-4">
-                <div className="flex items-center gap-2">
-                  <button className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                    <Edit className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-            {/* Add more rows as needed */}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
+
 
 // Example CoursesContent component
-const CoursesContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Courses</h2>
-      <p className="text-gray-600 mb-6">Manage all courses available on the platform.</p>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Example course card */}
-        <div className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition">
-          <img
-            src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&q=80"
-            alt="Course"
-            className="w-full h-40 rounded-lg object-cover mb-4"
-          />
-          <h3 className="text-lg font-semibold text-gray-900">Complete Web Development</h3>
-          <p className="text-sm text-gray-600 mb-2">Instructor: Sarah Wilson</p>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-purple-600">$149</span>
-            <div className="flex items-center gap-2">
-              <button className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                <Edit className="w-4 h-4 text-gray-600" />
-              </button>
-              <button className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                <Trash2 className="w-4 h-4 text-red-600" />
-              </button>
-            </div>
-          </div>
-        </div>
-        {/* Add more course cards as needed */}
-      </div>
-    </div>
-  );
-};
+
 
 // Placeholder components for other menu items
-const InstructorsContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Instructors</h2>
-      <p className="text-gray-600 mb-6">Manage instructors on the platform.</p>
-      {/* Add content specific to instructors */}
-    </div>
-  );
-};
 
-const StudentsContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Students</h2>
-      <p className="text-gray-600 mb-6">Manage students enrolled in courses.</p>
-      {/* Add content specific to students */}
-    </div>
-  );
-};
 
-const EnrollmentsContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Enrollments</h2>
-      <p className="text-gray-600 mb-6">View and manage course enrollments.</p>
-      {/* Add content specific to enrollments */}
-    </div>
-  );
-};
 
-const RevenueContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Revenue</h2>
-      <p className="text-gray-600 mb-6">View revenue statistics and reports.</p>
-      {/* Add content specific to revenue */}
-    </div>
-  );
-};
 
-const CertificatesContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Certificates</h2>
-      <p className="text-gray-600 mb-6">Manage certificates issued to students.</p>
-      {/* Add content specific to certificates */}
-    </div>
-  );
-};
 
-const ReportsContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Reports</h2>
-      <p className="text-gray-600 mb-6">Generate and view platform reports.</p>
-      {/* Add content specific to reports */}
-    </div>
-  );
-};
 
-const MessagesContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Messages</h2>
-      <p className="text-gray-600 mb-6">View and respond to messages.</p>
-      {/* Add content specific to messages */}
-    </div>
-  );
-};
 
-const ReviewsContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Reviews</h2>
-      <p className="text-gray-600 mb-6">Manage course and instructor reviews.</p>
-      {/* Add content specific to reviews */}
-    </div>
-  );
-};
 
-const SettingsContent: React.FC = () => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
-      <p className="text-gray-600 mb-6">Configure platform settings.</p>
-      {/* Add content specific to settings */}
-    </div>
-  );
-};
+
+
+
 
 export default AdminDashboard;
