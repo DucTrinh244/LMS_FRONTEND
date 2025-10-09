@@ -1,6 +1,6 @@
 import { Edit2 } from 'lucide-react';
 
-const DashboardHero = () => {
+const DashboardHeroInstructor = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 -mt-6 mt-6">
       <div className="relative bg-gradient-to-r from-violet-900/50 via-purple-900/50 to-slate-900 rounded-2xl p-6 overflow-hidden shadow-md">
@@ -25,16 +25,16 @@ const DashboardHero = () => {
                   <Edit2 className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-slate-300">Student</p>
+              <p className="text-slate-300">InStructor</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button className="bg-slate-800 text-white px-6 py-3 rounded-lg font-semibold border border-slate-700 hover:bg-violet-600/50 hover:shadow-violet-500/50 transition">
-              Become an Instructor
+              Add New Course
             </button>
             <button className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-violet-500/50 transition">
-              Instructor Dashboard
+              Student Dashboard
             </button>
           </div>
         </div>
@@ -43,4 +43,4 @@ const DashboardHero = () => {
   );
 };
 
-export default DashboardHero;
+export default DashboardHeroInstructor;

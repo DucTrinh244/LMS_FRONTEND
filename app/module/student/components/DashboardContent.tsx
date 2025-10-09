@@ -57,13 +57,13 @@ const DashboardContent = () => {
   return (
     <div className="space-y-6">
       {/* Quiz Progress */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-md hover:shadow-violet-500/50 transition">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Quiz : Build Responsive Real World</h3>
-            <p className="text-sm text-gray-500">Answered : 15/22</p>
+            <h3 className="text-lg font-bold text-white">Quiz: Build Responsive Real World</h3>
+            <p className="text-sm text-slate-400">Answered: 15/22</p>
           </div>
-          <button className="bg-purple-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-purple-700 transition">
+          <button className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:shadow-violet-500/50 transition">
             Continue Quiz
           </button>
         </div>
@@ -71,49 +71,49 @@ const DashboardContent = () => {
 
       {/* Stats */}
       <div className="grid md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-md hover:shadow-violet-500/50 transition">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center">
-              <BookOpen className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 bg-violet-600/20 rounded-xl flex items-center justify-center">
+              <BookOpen className="w-7 h-7 text-violet-400" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">12</div>
-              <div className="text-gray-600 text-sm font-medium">Enrolled Courses</div>
+              <div className="text-3xl font-bold text-white">12</div>
+              <div className="text-gray-600 text-sm font-medium text-slate-300">Enrolled Courses</div>
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-md hover:shadow-violet-500/50 transition">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-red-600 rounded-xl flex items-center justify-center">
-              <BookMarked className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 bg-violet-600/20 rounded-xl flex items-center justify-center">
+              <BookMarked className="w-7 h-7 text-violet-400" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">03</div>
-              <div className="text-gray-600 text-sm font-medium">Active Courses</div>
+              <div className="text-3xl font-bold text-white">03</div>
+              <div className="text-gray-600 text-sm font-medium text-slate-300">Active Courses</div>
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-md hover:shadow-violet-500/50 transition">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-green-600 rounded-xl flex items-center justify-center">
-              <CheckCircle className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 bg-violet-600/20 rounded-xl flex items-center justify-center">
+              <CheckCircle className="w-7 h-7 text-violet-400" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">10</div>
-              <div className="text-gray-600 text-sm font-medium">Completed Courses</div>
+              <div className="text-3xl font-bold text-white">10</div>
+              <div className="text-gray-600 text-sm font-medium text-slate-300">Completed Courses</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Recently Enrolled Courses */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Recently Enrolled Courses</h3>
+      <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-md hover:shadow-violet-500/50 transition">
+        <h3 className="text-xl font-bold text-white mb-6">Recently Enrolled Courses</h3>
         <div className="grid md:grid-cols-3 gap-6">
           {courses.map((course) => (
-            <div key={course.id} className="group relative bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition">
+            <div key={course.id} className="group relative bg-slate-800 rounded-xl border border-slate-700 overflow-hidden hover:shadow-lg hover:shadow-violet-500/50 transition">
               {/* Image */}
               <div className="relative">
                 <img 
@@ -121,11 +121,11 @@ const DashboardContent = () => {
                   alt={course.title}
                   className="w-full h-48 object-cover group-hover:scale-105 transition duration-300"
                 />
-                <button className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-lg hover:bg-red-50 transition">
-                  <Heart className="w-4 h-4 text-red-500" />
+                <button className="absolute top-3 right-3 bg-slate-700/50 p-2 rounded-full shadow-md hover:bg-violet-600/50 transition">
+                  <Heart className="w-4 h-4 text-violet-400" />
                 </button>
                 {course.badge && (
-                  <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="absolute top-3 left-3 bg-violet-600/20 text-violet-400 text-xs font-bold px-3 py-1 rounded-full">
                     {course.badge}
                   </span>
                 )}
@@ -140,28 +140,28 @@ const DashboardContent = () => {
                       alt={course.instructor}
                       className="w-8 h-8 rounded-full object-cover"
                     />
-                    <span className="text-sm text-gray-600 font-medium">{course.instructor}</span>
+                    <span className="text-sm text-slate-300 font-medium">{course.instructor}</span>
                   </div>
-                  <span className="bg-purple-100 text-purple-600 text-xs font-semibold px-3 py-1 rounded-full">
+                  <span className="bg-violet-600/20 text-violet-400 text-xs font-semibold px-3 py-1 rounded-full">
                     {course.category}
                   </span>
                 </div>
 
-                <h4 className="text-gray-900 font-bold mb-3 line-clamp-2 group-hover:text-purple-600 transition">
+                <h4 className="text-white font-bold mb-3 line-clamp-2 group-hover:text-violet-400 transition">
                   {course.title}
                 </h4>
 
                 <div className="flex items-center gap-2 mb-4">
                   <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    <span className="font-semibold text-sm">{course.rating}</span>
+                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    <span className="font-semibold text-sm text-white">{course.rating}</span>
                   </div>
-                  <span className="text-gray-500 text-sm">({course.reviews} Reviews)</span>
+                  <span className="text-slate-400 text-sm">({course.reviews} Reviews)</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <span className="text-2xl font-bold text-red-600">${course.price}</span>
-                  <button className="bg-black text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition text-sm">
+                <div className="flex items-center justify-between pt-4 border-t border-slate-700">
+                  <span className="text-2xl font-bold text-violet-400">${course.price}</span>
+                  <button className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:shadow-violet-500/50 transition text-sm">
                     View Course
                   </button>
                 </div>
@@ -174,24 +174,24 @@ const DashboardContent = () => {
       {/* Recent Invoices & Latest Quizzes */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Recent Invoices */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Recent Invoices</h3>
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-md hover:shadow-violet-500/50 transition">
+          <h3 className="text-xl font-bold text-white mb-6">Recent Invoices</h3>
           <div className="space-y-4">
             {invoices.map((invoice) => (
-              <div key={invoice.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+              <div key={invoice.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition">
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-1">{invoice.title}</h4>
-                  <div className="flex items-center gap-3 text-sm text-gray-500">
+                  <h4 className="font-semibold text-white mb-1">{invoice.title}</h4>
+                  <div className="flex items-center gap-3 text-sm text-slate-400">
                     <span>#{invoice.id}</span>
                     <span>•</span>
                     <span>Amount: ${invoice.amount}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                  <span className="bg-violet-600/20 text-violet-400 text-xs font-bold px-3 py-1.5 rounded-full">
                     {invoice.status}
                   </span>
-                  <button className="text-purple-600 hover:text-purple-700">
+                  <button className="text-violet-400 hover:text-violet-300">
                     <Download className="w-5 h-5" />
                   </button>
                 </div>
@@ -201,21 +201,21 @@ const DashboardContent = () => {
         </div>
 
         {/* Latest Quizzes */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Latest Quizzes</h3>
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-md hover:shadow-violet-500/50 transition">
+          <h3 className="text-xl font-bold text-white mb-6">Latest Quizzes</h3>
           <div className="space-y-4">
             {quizzes.map((quiz, index) => (
-              <div key={index} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+              <div key={index} className="p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-gray-900">{quiz.title}</h4>
-                  <span className="text-gray-600 font-semibold">{quiz.percentage}%</span>
+                  <h4 className="font-semibold text-white">{quiz.title}</h4>
+                  <span className="text-white font-semibold">{quiz.percentage}%</span>
                 </div>
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                <div className="flex items-center justify-between text-sm text-slate-400 mb-3">
                   <span>Correct Answer: {quiz.correct}/{quiz.total}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-slate-700 rounded-full h-2">
                   <div 
-                    className="bg-purple-600 h-2 rounded-full transition-all"
+                    className="bg-violet-600 h-2 rounded-full transition-all"
                     style={{ width: `${quiz.percentage}%` }}
                   />
                 </div>

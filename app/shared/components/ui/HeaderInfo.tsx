@@ -1,4 +1,3 @@
-import { X } from 'lucide-react';
 
 type BreadcrumbItem = {
   label: string;
@@ -13,10 +12,6 @@ interface CourseGridHeaderProps {
 const HeaderInfo = ({ title = "Name__Name", breadcrumb = [] }: CourseGridHeaderProps) => {
   return (
     <div className="relative bg-gradient-to-r from-violet-900/50 via-purple-900/50 to-slate-900 py-16 px-4">
-      {/* Nút đóng */}
-      <button className="absolute top-4 right-4 w-10 h-10 bg-slate-700/50 backdrop-blur-xl border border-slate-600 rounded-full flex items-center justify-center hover:bg-violet-600/50 transition">
-        <X className="w-5 h-5 text-white" />
-      </button>
 
       {/* Nội dung */}
       <div className="container mx-auto text-center">
