@@ -17,20 +17,20 @@ import {
 import { useState, type JSX } from "react";
 import AnnouncementsContent from "~/module/instructor/components/AnnouncementsContent";
 import AssignmentsContent from "~/module/instructor/components/AssignmentsContent";
-import CertificatesContent from "~/module/instructor/components/CertificatesContent";
-import CoursesContent from "~/module/instructor/components/CoursesContent";
+import CertificatesContent from "~/module/instructor/pages/certificate/CertificatesContent";
 import DashboardContent from "~/module/instructor/components/DashboardContent";
 import EarningsContent from "~/module/instructor/components/EarningsContent";
 import LogoutContent from "~/module/instructor/components/LogoutContent";
 import MessagesContent from "~/module/instructor/components/MessagesContent";
 import MyProfileContent from "~/module/instructor/components/MyProfileContent";
 import PayoutContent from "~/module/instructor/components/PayoutContent";
-import QuizContent from "~/module/instructor/components/QuizContent";
+import QuizContent from "~/module/instructor/pages/quiz/QuizContent";
 import QuizResultsContent from "~/module/instructor/components/QuizResultsContent";
 import SettingsContent from "~/module/instructor/components/SettingsContent";
 import StatementsContent from "~/module/instructor/components/StatementsContent";
 import StudentsContent from "~/module/instructor/components/StudentsContent";
 import SupportTicketsContent from "~/module/instructor/components/SupportTicketsContent";
+import CoursesContent from "~/module/instructor/pages/course/CoursesContent";
 
 type MenuItem =
   | 'Dashboard'

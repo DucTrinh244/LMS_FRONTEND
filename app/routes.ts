@@ -32,6 +32,9 @@ export default [
 
   // INSTRUCTOR ROUTER
   route('instructor/dashboard', 'module/instructor/pages/DashboardPage.tsx'),
+  //Courses routes
+  route('instructor/course/add', 'module/instructor/pages/course/AddCoursePage.tsx'),
+  // route('instructor/course/update', 'module/instructor/pages/course/CoursesPage.tsx'),
 
   // ADMIN ROUTER
   route('admin/dashboard', 'module/admin/pages/DashboardPage.tsx')

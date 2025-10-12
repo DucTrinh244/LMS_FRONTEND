@@ -1,8 +1,9 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
+import { ToastProvider } from '~/context/ToastContext';
 import type { Route } from './+types/root';
 import './app.css';
-import { AuthProvider } from './context/authContext'; // import AuthProvider của bạn
+import { AuthProvider } from './context/authContext';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -37,9 +38,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
     return (
-    <AuthProvider>
-      <Outlet />
-    </AuthProvider>
+      <ToastProvider>
+          <AuthProvider>
+              <Outlet />
+          </AuthProvider>
+      </ToastProvider>
   );
 }
 
