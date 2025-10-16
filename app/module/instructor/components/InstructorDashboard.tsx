@@ -21,14 +21,14 @@ import CertificatesContent from "~/module/instructor/pages/certificate/Certifica
 import DashboardContent from "~/module/instructor/components/DashboardContent";
 import EarningsContent from "~/module/instructor/components/EarningsContent";
 import LogoutContent from "~/module/instructor/components/LogoutContent";
-import MessagesContent from "~/module/instructor/components/MessagesContent";
-import MyProfileContent from "~/module/instructor/components/MyProfileContent";
+import MessagesContent from "~/module/instructor/pages/chat/MessagesContent";
+import MyProfileContent from "~/module/instructor/pages/profile/MyProfileContent";
 import PayoutContent from "~/module/instructor/components/PayoutContent";
 import QuizContent from "~/module/instructor/pages/quiz/QuizContent";
 import QuizResultsContent from "~/module/instructor/components/QuizResultsContent";
 import SettingsContent from "~/module/instructor/components/SettingsContent";
 import StatementsContent from "~/module/instructor/components/StatementsContent";
-import StudentsContent from "~/module/instructor/components/StudentsContent";
+import StudentsContent from "~/module/instructor/pages/student/StudentsContent";
 import SupportTicketsContent from "~/module/instructor/components/SupportTicketsContent";
 import CoursesContent from "~/module/instructor/pages/course/CoursesContent";
 

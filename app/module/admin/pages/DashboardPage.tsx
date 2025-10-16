@@ -26,17 +26,18 @@ import {
   X
 } from 'lucide-react';
 import React, { useState, type JSX } from 'react';
-import CertificatesContent from '~/module/admin/components/CertificatesContent';
-import CoursesContent from '~/module/admin/components/CoursesContent';
-import EnrollmentsContent from '~/module/admin/components/EnrollmentsContent';
-import InstructorsContent from '~/module/admin/components/InstructorsContent';
-import MessagesContent from '~/module/admin/components/MessagesContent';
-import ReportsContent from '~/module/admin/components/ReportsContent';
-import RevenueContent from '~/module/admin/components/RevenueContent';
-import ReviewsContent from '~/module/admin/components/ReviewsContent';
-import SettingsContent from '~/module/admin/components/SettingsContent';
-import StudentsContent from '~/module/admin/components/StudentsContent';
-import UsersManagementContent from '~/module/admin/components/UsersManagementContent';
+import CategoryContent from '~/module/admin/pages/category/CategoryPage';
+import CertificatesContent from '~/module/admin/pages/CertificatesContent';
+import CoursesContent from '~/module/admin/pages/CoursesContent';
+import EnrollmentsContent from '~/module/admin/pages/EnrollmentsContent';
+import InstructorsContent from '~/module/admin/pages/InstructorsContent';
+import MessagesContent from '~/module/admin/pages/message/MessagesContent';
+import ReportsContent from '~/module/admin/pages/ReportsContent';
+import RevenueContent from '~/module/admin/pages/RevenueContent';
+import ReviewsContent from '~/module/admin/pages/ReviewsContent';
+import SettingsContent from '~/module/admin/pages/SettingsContent';
+import StudentsContent from '~/module/admin/pages/student/StudentsContent';
+import UsersManagementContent from '~/module/admin/pages/user/UsersManagementContent';
 
 // Import individual components for each menu item
 // import DashboardContent from './DashboardContent';
@@ -68,6 +69,7 @@ const AdminDashboard: React.FC = () => {
     { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', badge: null },
     { icon: <Users className="w-5 h-5" />, label: 'Users Management', badge: '45' },
     { icon: <BookOpen className="w-5 h-5" />, label: 'Courses', badge: '120' },
+    { icon: <BookOpen className="w-5 h-5" />, label: 'Categories', badge: '120' },
     { icon: <GraduationCap className="w-5 h-5" />, label: 'Instructors', badge: '28' },
     { icon: <Users className="w-5 h-5" />, label: 'Students', badge: '1.2K' },
     { icon: <ShoppingCart className="w-5 h-5" />, label: 'Enrollments', badge: null },
@@ -88,6 +90,8 @@ const AdminDashboard: React.FC = () => {
         return <UsersManagementContent />;
       case 'Courses':
         return <CoursesContent />;
+      case 'Categories':
+        return <CategoryContent />;
       case 'Instructors':
         return <InstructorsContent />;
       case 'Students':
