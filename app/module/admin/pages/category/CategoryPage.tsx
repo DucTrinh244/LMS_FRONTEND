@@ -17,10 +17,10 @@ const CategoryPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [mode, setMode] = useState<"list" | "add" | "edit">("list");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const {confirm} = useConfirmDialog();
-  const {toast} = useToast();
+  const { confirm } = useConfirmDialog();
+  const { toast } = useToast();
 
-  // Giả lập dữ liệu ban đầu (có thể thay bằng API)
+  // Giả lập dữ liệu ban đầu (thay bằng API nếu có)
   useEffect(() => {
     setCategories([
       {
@@ -51,17 +51,18 @@ const CategoryPage: React.FC = () => {
   }, []);
 
   // Hàm xóa category
- const handleDelete = async (id: string) => {
-  const ok = await confirm("Bạn có chắc muốn xóa danh mục này?");
-  if (ok) {
-    try {
-      // await axios.delete(`/api/categories/${id}`);
-      toast.success("Xóa thành công!");
-    } catch (error) {
-      toast.error("Có lỗi xảy ra khi xóa!");
+  const handleDelete = async (id: string) => {
+    const ok = await confirm("Bạn có chắc muốn xóa danh mục này?");
+    if (ok) {
+      try {
+        // await axios.delete(`/api/categories/${id}`);
+        setCategories((prev) => prev.filter((c) => c.id !== id));
+          toast.success("Xóa thành công!");
+      } catch (error) {
+        toast.error("Có lỗi xảy ra khi xóa!");
+      }
     }
-  }
-};
+  };
 
   // Hàm thêm hoặc chỉnh sửa category
   const handleSave = (category: {
@@ -71,7 +72,7 @@ const CategoryPage: React.FC = () => {
     priority: number;
   }) => {
     if (selectedCategory) {
-      // Cập nhật category
+      // Cập nhật
       setCategories((prev) =>
         prev.map((c) =>
           c.id === selectedCategory
@@ -79,6 +80,7 @@ const CategoryPage: React.FC = () => {
             : c
         )
       );
+      toast.success("Cập nhật thành công!");
     } else {
       // Thêm mới
       setCategories((prev) => [
@@ -89,12 +91,14 @@ const CategoryPage: React.FC = () => {
           createdAt: new Date().toISOString(),
         },
       ]);
+      toast.success("Thêm danh mục thành công!");
     }
+
     setMode("list");
     setSelectedCategory(null);
   };
 
-  // Nếu đang ở chế độ thêm hoặc chỉnh sửa
+  // Nếu đang ở chế độ thêm hoặc sửa
   if (mode === "add" || mode === "edit") {
     return (
       <AddCategory
@@ -115,8 +119,9 @@ const CategoryPage: React.FC = () => {
   // Hiển thị danh sách category
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Categories</h2>
+        <h2 className="text-2xl font-bold text-gray-900">📂 Categories</h2>
         <button
           onClick={() => setMode("add")}
           className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
@@ -125,55 +130,79 @@ const CategoryPage: React.FC = () => {
         </button>
       </div>
 
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-3">#</th>
-            <th className="p-3">Name</th>
-            <th className="p-3">Description</th>
-            <th className="p-3">Created At</th>
-            <th className="p-3">Status</th>
-            <th className="p-3">Priority</th>
-            <th className="p-3 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {categories.map((cat, index) => (
-            <tr key={cat.id} className="border-t hover:bg-gray-50">
-              <td className="p-3">{index + 1}</td>
-              <td className="p-3 font-medium">{cat.name}</td>
-              <td className="p-3 text-gray-600">{cat.description}</td>
-              <td className="p-3">{new Date(cat.createdAt).toLocaleDateString()}</td>
-              <td className="p-3">{cat.status}</td>
-              <td className="p-3">{cat.priority}</td>
-              <td className="p-3 text-center flex justify-center gap-3">
-                <button
-                  onClick={() => {
-                    setSelectedCategory(cat.id);
-                    setMode("edit");
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
-                >
-                  <Edit className="w-4 h-4 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => handleDelete(cat.id)}
-                  className="p-2 hover:bg-red-50 rounded-lg"
-                >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </button>
-              </td>
+      {/* Bảng danh sách */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-left border border-gray-200 rounded-lg overflow-hidden">
+          <thead>
+            <tr className="bg-gray-100 text-gray-800">
+              <th className="p-3 font-medium">#</th>
+              <th className="p-3 font-medium">Name</th>
+              <th className="p-3 font-medium">Description</th>
+              <th className="p-3 font-medium">Created At</th>
+              <th className="p-3 font-medium">Status</th>
+              <th className="p-3 font-medium">Priority</th>
+              <th className="p-3 text-center font-medium">Actions</th>
             </tr>
-          ))}
-          {categories.length === 0 && (
-            <tr>
-              <td colSpan={7} className="text-center text-gray-500 p-6">
-                No categories found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="text-gray-900">
+            {categories.length > 0 ? (
+              categories.map((cat, index) => (
+                <tr
+                  key={cat.id}
+                  className="border-t border-gray-200 hover:bg-gray-50 transition"
+                >
+                  <td className="p-3">{index + 1}</td>
+                  <td className="p-3 font-semibold">{cat.name}</td>
+                  <td className="p-3 text-gray-700">{cat.description}</td>
+                  <td className="p-3 text-gray-600">
+                    {new Date(cat.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="p-3">
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm font-medium ${
+                        cat.status === "Active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      {cat.status}
+                    </span>
+                  </td>
+                  <td className="p-3">{cat.priority}</td>
+                  <td className="p-3 flex justify-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setMode("edit");
+                      }}
+                      className="p-2 hover:bg-purple-100 rounded-lg transition"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4 text-purple-600" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(cat.id)}
+                      className="p-2 hover:bg-red-100 rounded-lg transition"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="text-center text-gray-500 p-6 italic"
+                >
+                  No categories found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

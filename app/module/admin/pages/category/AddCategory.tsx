@@ -51,53 +51,75 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category }) =
     onSave({ name, description, status, priority });
   };
 
+  // ✅ Class chung cho các ô input/textarea/select
+  const inputClass =
+    "w-full border rounded-lg px-3 py-2 bg-gray-100 text-black placeholder:text-gray-500 " +
+    "focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition";
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-4">
         {category ? "Edit Category" : "Add New Category"}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Category Name */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Category Name</label>
+          <label className="block text-gray-700 font-medium mb-1">
+            Category Name
+          </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Enter category name"
-            className="w-full border rounded-lg px-3 py-2 bg-gray-100 focus:ring-2 focus:ring-purple-500 focus:bg-white"
+            className={inputClass}
           />
         </div>
+
+        {/* Description */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Description</label>
+          <label className="block text-gray-700 font-medium mb-1">
+            Description
+          </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Enter description"
-            className="w-full border rounded-lg px-3 py-2 h-24 bg-gray-100 focus:ring-2 focus:ring-purple-500 focus:bg-white"
+            className={`${inputClass} h-24`}
           />
         </div>
+
+        {/* Status */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Status</label>
+          <label className="block text-gray-700 font-medium mb-1">
+            Status
+          </label>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as "Active" | "Inactive")}
-            className="w-full border rounded-lg px-3 py-2 bg-gray-100 focus:ring-2 focus:ring-purple-500 focus:bg-white"
+            className={inputClass}
           >
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
         </div>
+
+        {/* Priority */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Priority</label>
+          <label className="block text-gray-700 font-medium mb-1">
+            Priority
+          </label>
           <input
             type="number"
             value={priority}
             onChange={(e) => setPriority(Number(e.target.value))}
             placeholder="Enter priority (1 or higher)"
             min="1"
-            className="w-full border rounded-lg px-3 py-2 bg-gray-100 focus:ring-2 focus:ring-purple-500 focus:bg-white"
+            className={inputClass}
           />
         </div>
+
+        {/* Buttons */}
         <div className="flex justify-end gap-3">
           <button
             type="button"

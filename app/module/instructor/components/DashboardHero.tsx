@@ -1,16 +1,15 @@
 import { Edit2 } from 'lucide-react';
-import { useToast } from '~/context/ToastContext';
+import { useToast } from '~/shared/hooks/useToast';
 
 const DashboardHeroInstructor = () => {
-    const { addToast } = useToast(); 
+    const { toast } = useToast(); 
 
   const handleSuccessClick = () => {
-    addToast('Đã lưu thành công dữ liệu!', 'success');
+        toast.success("Xóa thành công!");
   };
 
   const handleErrorClick = () => {
-    addToast('Lỗi: Không thể kết nối đến máy chủ.', 'error', 5000); // 5 giây
-  };
+ toast.error("Có lỗi xảy ra khi xóa!");  };
   return (
     <div className="max-w-7xl mx-auto px-4 -mt-6 mt-6">
       <div className="relative bg-gradient-to-r from-violet-900/50 via-purple-900/50 to-slate-900 rounded-2xl p-6 overflow-hidden shadow-md">
@@ -46,7 +45,7 @@ const DashboardHeroInstructor = () => {
                 Add New Course
               </a>
               <a
-                href="/student-dashboard"
+                href="/student"
                 className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-violet-500/50 transition cursor-pointer inline-block text-center"
               >
                 Student Dashboard

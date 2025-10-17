@@ -30,12 +30,12 @@ const DashboardHero = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="bg-slate-800 text-white px-6 py-3 rounded-lg font-semibold border border-slate-700 hover:bg-violet-600/50 hover:shadow-violet-500/50 transition">
+            <a href="/become-instructor" className="bg-slate-800 text-white px-6 py-3 rounded-lg font-semibold border border-slate-700 hover:bg-violet-600/50 hover:shadow-violet-500/50 transition">
               Become an Instructor
-            </button>
-            <button className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-violet-500/50 transition">
+            </a>
+            <a href="/instructor" className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-violet-500/50 transition">
               Instructor Dashboard
-            </button>
+            </a>
           </div>
         </div>
       </div>
