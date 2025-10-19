@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { authService } from '~/services/auth/auth'
+import { authService } from '~/module/auth/services/auth'
 
 const httpClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'https://localhost:7151/api',

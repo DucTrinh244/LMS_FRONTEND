@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { authService } from '~/services/auth/auth'
+import { authService } from '~/module/auth/services/auth'
 import type { User } from '~/types/auth/entities'
 import type { LoginRequest, } from '~/types/auth/login'
 import type { RegisterRequest } from '~/types/auth/register'

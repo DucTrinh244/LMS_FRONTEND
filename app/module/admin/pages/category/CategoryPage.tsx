@@ -1,5 +1,5 @@
 import { Edit, Plus, Trash2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useConfirmDialog } from "~/shared/hooks/useConfirmDialog";
 import { useToast } from "~/shared/hooks/useToast";
 import AddCategory from "./AddCategory";
@@ -9,7 +9,7 @@ interface Category {
   name: string;
   description: string;
   createdAt: string;
-  status: "Active" | "Inactive";
+  parentId?: string | null;
   priority: number;
 }
 
@@ -28,7 +28,7 @@ const CategoryPage: React.FC = () => {
         name: "Web Development",
         description: "Learn to build websites.",
         createdAt: new Date().toISOString(),
-        status: "Active",
+        parentId: null,
         priority: 1,
       },
       {
@@ -36,7 +36,7 @@ const CategoryPage: React.FC = () => {
         name: "Design",
         description: "Master UI/UX design skills.",
         createdAt: new Date().toISOString(),
-        status: "Active",
+        parentId: "1",
         priority: 2,
       },
       {
@@ -44,7 +44,7 @@ const CategoryPage: React.FC = () => {
         name: "Business",
         description: "Grow your business career.",
         createdAt: new Date().toISOString(),
-        status: "Inactive",
+        parentId: null,
         priority: 3,
       },
     ]);
@@ -57,7 +57,7 @@ const CategoryPage: React.FC = () => {
       try {
         // await axios.delete(`/api/categories/${id}`);
         setCategories((prev) => prev.filter((c) => c.id !== id));
-          toast.success("Xóa thành công!");
+        toast.success("Xóa thành công!");
       } catch (error) {
         toast.error("Có lỗi xảy ra khi xóa!");
       }
@@ -68,7 +68,7 @@ const CategoryPage: React.FC = () => {
   const handleSave = (category: {
     name: string;
     description: string;
-    status: "Active" | "Inactive";
+    parentId?: string | null;
     priority: number;
   }) => {
     if (selectedCategory) {
@@ -112,9 +112,17 @@ const CategoryPage: React.FC = () => {
             ? categories.find((c) => c.id === selectedCategory) || null
             : null
         }
+        categories={categories}
       />
     );
   }
+
+  // Hàm lấy tên parent category
+  const getParentName = (parentId: string | null | undefined) => {
+    if (!parentId) return "None";
+    const parent = categories.find((c) => c.id === parentId);
+    return parent ? parent.name : "Unknown";
+  };
 
   // Hiển thị danh sách category
   return (
@@ -139,7 +147,7 @@ const CategoryPage: React.FC = () => {
               <th className="p-3 font-medium">Name</th>
               <th className="p-3 font-medium">Description</th>
               <th className="p-3 font-medium">Created At</th>
-              <th className="p-3 font-medium">Status</th>
+              <th className="p-3 font-medium">Parent Category</th>
               <th className="p-3 font-medium">Priority</th>
               <th className="p-3 text-center font-medium">Actions</th>
             </tr>
@@ -157,17 +165,7 @@ const CategoryPage: React.FC = () => {
                   <td className="p-3 text-gray-600">
                     {new Date(cat.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-sm font-medium ${
-                        cat.status === "Active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-200 text-gray-700"
-                      }`}
-                    >
-                      {cat.status}
-                    </span>
-                  </td>
+                  <td className="p-3">{getParentName(cat.parentId)}</td>
                   <td className="p-3">{cat.priority}</td>
                   <td className="p-3 flex justify-center gap-2">
                     <button
