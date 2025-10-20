@@ -1,9 +1,11 @@
-import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
-
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import type { Route } from './+types/root';
 import './app.css';
 import { AuthProvider } from './context/authContext';
+
+const queryClient = new QueryClient();
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -39,11 +41,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
     return (
       // <ToastProvider>
-          <AuthProvider>
-              <Outlet />
-              <Toaster />
-              {/* <RouterProvider router={router} /> */}
-          </AuthProvider>
+          <QueryClientProvider client={queryClient}>
+              <AuthProvider>
+                  <Outlet />
+                  <Toaster />
+                  {/* <RouterProvider router={router} /> */}
+              </AuthProvider>
+          </QueryClientProvider>
+
       // </ToastProvider>
   );
 }

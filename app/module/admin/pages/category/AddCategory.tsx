@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { categoryService } from "~/module/admin/services/CategoryApi";
-import type { CategoryRequest } from "~/module/admin/types/Category";
 
 interface AddCategoryProps {
   onBack: () => void;
@@ -9,7 +7,7 @@ interface AddCategoryProps {
     description: string;
     parentId?: string | null;
     priority: number;
-  }) => void;
+  }) => Promise<void>;
   category?: {
     id?: string;
     name: string;
@@ -28,91 +26,109 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [parentId, setParentId] = useState<string | null>(null);
-  const [sortOrder, setsortOrder] = useState<number>(1);
+  const [sortOrder, setSortOrder] = useState<number>(1);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    sortOrder?: string;
+  }>({});
 
   useEffect(() => {
     if (category) {
       setName(category.name);
       setDescription(category.description);
       setParentId(category.parentId || null);
-      setsortOrder(category.priority);
+      setSortOrder(category.priority);
     } else {
       setName("");
       setDescription("");
       setParentId(null);
-      setsortOrder(1);
+      setSortOrder(1);
     }
+    setErrors({});
   }, [category]);
+
+  const validateForm = (): boolean => {
+    const newErrors: { name?: string; sortOrder?: string } = {};
+
+    if (!name.trim()) {
+      newErrors.name = "Tên danh mục không được để trống";
+    }
+
+    if (sortOrder < 1) {
+      newErrors.sortOrder = "Thứ tự ưu tiên phải lớn hơn hoặc bằng 1";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      alert("Please enter a category name");
-      return;
-    }
-    if (sortOrder < 1) {
-      alert("Priority must be at least 1");
+    
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
     try {
-      const payload: CategoryRequest = { name, description, parentId, sortOrder };
-
-      let savedCategory;
-      if (category?.id) {
-        // Update existing category
-        // savedCategory = await updateCategory(category.id, payload);
-      } else {
-        // Add new category
-        savedCategory = await categoryService.createCategory(payload);
-      }
-
-      onSave(savedCategory);
+      await onSave({
+        name: name.trim(),
+        description: description.trim(),
+        parentId: parentId || null,
+        priority: sortOrder,
+      });
     } catch (error) {
       console.error("Error saving category:", error);
-      alert("Failed to save category. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const inputClass =
-    "w-full border rounded-lg px-3 py-2 bg-gray-100 text-black placeholder:text-gray-500 " +
-    "focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition";
+  const inputClass = (hasError?: boolean) =>
+    `w-full border rounded-lg px-3 py-2 bg-gray-100 text-black placeholder:text-gray-500 
+    focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition
+    ${hasError ? "border-red-500" : "border-gray-300"}`;
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-4">
-        {category ? "Edit Category" : "Add New Category"}
+        {category ? "✏️ Chỉnh sửa danh mục" : "➕ Thêm danh mục mới"}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Category Name */}
         <div>
           <label className="block text-gray-700 font-medium mb-1">
-            Category Name
+            Tên danh mục <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter category name"
-            className={inputClass}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (errors.name) {
+                setErrors({ ...errors, name: undefined });
+              }
+            }}
+            placeholder="Nhập tên danh mục"
+            className={inputClass(!!errors.name)}
             disabled={loading}
           />
+          {errors.name && (
+            <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+          )}
         </div>
 
         {/* Description */}
         <div>
           <label className="block text-gray-700 font-medium mb-1">
-            Description
+            Mô tả
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter description"
-            className={`${inputClass} h-24`}
+            placeholder="Nhập mô tả danh mục"
+            className={`${inputClass()} h-24`}
             disabled={loading}
           />
         </div>
@@ -120,15 +136,15 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
         {/* Parent Category */}
         <div>
           <label className="block text-gray-700 font-medium mb-1">
-            Parent Category
+            Danh mục cha
           </label>
           <select
             value={parentId || ""}
             onChange={(e) => setParentId(e.target.value || null)}
-            className={inputClass}
+            className={inputClass()}
             disabled={loading}
           >
-            <option value="">None</option>
+            <option value="">Không có</option>
             {categories
               .filter((cat) => cat.id !== category?.id) // Prevent self-referencing
               .map((cat) => (
@@ -142,35 +158,50 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
         {/* Priority */}
         <div>
           <label className="block text-gray-700 font-medium mb-1">
-            Priority
+            Thứ tự ưu tiên <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
             value={sortOrder}
-            onChange={(e) => setsortOrder(Number(e.target.value))}
-            placeholder="Enter priority (1 or higher)"
+            onChange={(e) => {
+              setSortOrder(Number(e.target.value));
+              if (errors.sortOrder) {
+                setErrors({ ...errors, sortOrder: undefined });
+              }
+            }}
+            placeholder="Nhập thứ tự ưu tiên (từ 1 trở lên)"
             min="1"
-            className={inputClass}
+            className={inputClass(!!errors.sortOrder)}
             disabled={loading}
           />
+          {errors.sortOrder && (
+            <p className="text-red-500 text-sm mt-1">{errors.sortOrder}</p>
+          )}
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={onBack}
-            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+            className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
             disabled={loading}
           >
-            Cancel
+            Hủy
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            {loading ? "Saving..." : (category ? "Save Changes" : "Add Category")}
+            {loading ? (
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Đang lưu...
+              </>
+            ) : (
+              category ? "💾 Lưu thay đổi" : "➕ Thêm danh mục"
+            )}
           </button>
         </div>
       </form>

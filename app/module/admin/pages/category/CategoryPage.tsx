@@ -3,24 +3,22 @@ import { useState } from "react";
 import { useCategory } from "~/module/admin/hooks/useCategory";
 import type { CategoryDetail } from "~/module/admin/types/Category";
 import { useConfirmDialog } from "~/shared/hooks/useConfirmDialog";
-import { useToast } from "~/shared/hooks/useToast";
 import AddCategory from "./AddCategory";
 
 const CategoryPage: React.FC = () => {
   const [mode, setMode] = useState<"list" | "add" | "edit">("list");
   const [selectedCategory, setSelectedCategory] = useState<CategoryDetail | null>(null);
   const { confirm } = useConfirmDialog();
-  const { toast } = useToast();
+  
   const { 
     categories, 
     loading, 
     error, 
-    // deleteCategory, 
-    // createCategory, 
-    // updateCategory, 
-    // refetch 
-  } 
-    = useCategory();
+    deleteCategory, 
+    createCategory, 
+    updateCategory,
+    isDeleting
+  } = useCategory();
 
   // Loading & Error
   if (loading) return <p>Đang tải danh mục...</p>;
@@ -30,13 +28,7 @@ const CategoryPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     const ok = await confirm("Bạn có chắc muốn xóa danh mục này?");
     if (ok) {
-      try {
-        // await deleteCategory(id);
-        toast.success("Xóa danh mục thành công!");
-        // await refetch(); // reload lại danh sách
-      } catch {
-        toast.error("Có lỗi xảy ra khi xóa danh mục!");
-      }
+      await deleteCategory(id);
     }
   };
 
@@ -47,21 +39,21 @@ const CategoryPage: React.FC = () => {
     parentId?: string | null;
     priority: number;
   }) => {
-    try {
-      if (selectedCategory) {
-        // await updateCategory(selectedCategory.id, data);
-        toast.success("Cập nhật danh mục thành công!");
-      } else {
-        // await createCategory(data);
-        toast.success("Thêm danh mục thành công!");
-      }
+    const requestData = {
+      name: data.name,
+      description: data.description,
+      parentId: data.parentId,
+      sortOrder: data.priority
+    };
 
-      setMode("list");
-      setSelectedCategory(null);
-      // await refetch();
-    } catch {
-      toast.error("Lưu danh mục thất bại!");
+    if (selectedCategory) {
+      await updateCategory(selectedCategory.id, requestData);
+    } else {
+      await createCategory(requestData);
     }
+
+    setMode("list");
+    setSelectedCategory(null);
   };
 
   if (mode === "add" || mode === "edit") {
@@ -131,7 +123,7 @@ const CategoryPage: React.FC = () => {
                     {new Date(cat.createdAt).toLocaleDateString()}
                   </td>
                   <td className="p-3">{getParentName(cat.parentId)}</td>
-                  <td className="p-3">{cat.sortOrder ?? cat.sortOrder ?? 0}</td>
+                  <td className="p-3">{cat.sortOrder ?? 0}</td>
                   <td className="p-3 flex justify-center gap-2">
                     <button
                       onClick={() => {
@@ -145,7 +137,8 @@ const CategoryPage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => handleDelete(cat.id)}
-                      className="p-2 hover:bg-red-100 rounded-lg transition"
+                      disabled={isDeleting}
+                      className="p-2 hover:bg-red-100 rounded-lg transition disabled:opacity-50"
                       title="Xóa"
                     >
                       <Trash2 className="w-4 h-4 text-red-600" />
