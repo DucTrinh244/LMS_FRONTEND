@@ -3,10 +3,12 @@ import React, { useEffect, useState } from "react";
 interface AddCategoryProps {
   onBack: () => void;
   onSave: (category: {
+    id: string ;
     name: string;
     description: string;
     parentId?: string | null;
     priority: number;
+    isActive: boolean;
   }) => Promise<void>;
   category?: {
     id?: string;
@@ -15,6 +17,7 @@ interface AddCategoryProps {
     createdAt?: string;
     parentId?: string | null;
     priority: number;
+    isActive?: boolean;
   } | null;
   categories: {
     id: string;
@@ -26,7 +29,8 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [parentId, setParentId] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<number>(1);
+  const [sortOrder, setSortOrder] = useState<number>(0);
+  const [isActive, setIsActive] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
@@ -39,11 +43,13 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
       setDescription(category.description);
       setParentId(category.parentId || null);
       setSortOrder(category.priority);
+      setIsActive(category.isActive ?? true);
     } else {
       setName("");
       setDescription("");
       setParentId(null);
-      setSortOrder(1);
+      setSortOrder(0);
+      setIsActive(true);
     }
     setErrors({});
   }, [category]);
@@ -55,8 +61,8 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
       newErrors.name = "Tên danh mục không được để trống";
     }
 
-    if (sortOrder < 1) {
-      newErrors.sortOrder = "Thứ tự ưu tiên phải lớn hơn hoặc bằng 1";
+    if (sortOrder < 0) {
+      newErrors.sortOrder = "Thứ tự ưu tiên phải lớn hơn hoặc bằng 0";
     }
 
     setErrors(newErrors);
@@ -73,10 +79,12 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
     setLoading(true);
     try {
       await onSave({
+        id: category?.id || '',
         name: name.trim(),
         description: description.trim(),
         parentId: parentId || null,
         priority: sortOrder,
+        isActive,
       });
     } catch (error) {
       console.error("Error saving category:", error);
@@ -155,10 +163,10 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
           </select>
         </div>
 
-        {/* Priority */}
+        {/* Sort Order */}
         <div>
           <label className="block text-gray-700 font-medium mb-1">
-            Thứ tự ưu tiên <span className="text-red-500">*</span>
+            Thứ tự sắp xếp <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -169,15 +177,36 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
                 setErrors({ ...errors, sortOrder: undefined });
               }
             }}
-            placeholder="Nhập thứ tự ưu tiên (từ 1 trở lên)"
-            min="1"
+            placeholder="Nhập thứ tự sắp xếp (từ 0 trở lên)"
+            min="0"
             className={inputClass(!!errors.sortOrder)}
             disabled={loading}
           />
           {errors.sortOrder && (
             <p className="text-red-500 text-sm mt-1">{errors.sortOrder}</p>
           )}
+          <p className="text-gray-500 text-xs mt-1">
+            Số càng nhỏ, danh mục càng hiển thị ở vị trí trên
+          </p>
         </div>
+
+        {/* Is Active */}
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 focus:ring-2 cursor-pointer"
+            disabled={loading}
+          />
+          <label htmlFor="isActive" className="text-gray-700 font-medium cursor-pointer select-none">
+            Kích hoạt danh mục
+          </label>
+        </div>
+        <p className="text-gray-500 text-xs -mt-2 ml-8">
+          Chỉ danh mục được kích hoạt mới hiển thị trên website
+        </p>
 
         {/* Buttons */}
         <div className="flex justify-end gap-3 pt-2">

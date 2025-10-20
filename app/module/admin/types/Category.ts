@@ -15,6 +15,7 @@ export interface Category {
 }
 
 export interface CategoryRequest {
+  id: string
   name: string
   description: string
   parentId?: string | null

@@ -34,16 +34,20 @@ const CategoryPage: React.FC = () => {
 
   // 🔥 Hàm thêm hoặc cập nhật danh mục
   const handleSave = async (data: {
+    id: string ;
     name: string;
     description: string;
     parentId?: string | null;
     priority: number;
+    isActive: boolean;
   }) => {
     const requestData = {
+      id: data.id,      
       name: data.name,
       description: data.description,
       parentId: data.parentId,
-      sortOrder: data.priority
+      sortOrder: data.priority,
+      isActive: data.isActive
     };
 
     if (selectedCategory) {
