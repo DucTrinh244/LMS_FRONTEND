@@ -17,20 +17,20 @@ import {
 import { useState, type JSX } from "react";
 import AnnouncementsContent from "~/module/instructor/components/AnnouncementsContent";
 import AssignmentsContent from "~/module/instructor/components/AssignmentsContent";
-import CertificatesContent from "~/module/instructor/pages/certificate/CertificatesContent";
 import DashboardContent from "~/module/instructor/components/DashboardContent";
 import EarningsContent from "~/module/instructor/components/EarningsContent";
 import LogoutContent from "~/module/instructor/components/LogoutContent";
-import MessagesContent from "~/module/instructor/pages/chat/MessagesContent";
-import MyProfileContent from "~/module/instructor/pages/profile/MyProfileContent";
 import PayoutContent from "~/module/instructor/components/PayoutContent";
-import QuizContent from "~/module/instructor/pages/quiz/QuizContent";
 import QuizResultsContent from "~/module/instructor/components/QuizResultsContent";
 import SettingsContent from "~/module/instructor/components/SettingsContent";
 import StatementsContent from "~/module/instructor/components/StatementsContent";
-import StudentsContent from "~/module/instructor/pages/student/StudentsContent";
 import SupportTicketsContent from "~/module/instructor/components/SupportTicketsContent";
+import CertificatesContent from "~/module/instructor/pages/certificate/CertificatesContent";
+import MessagesContent from "~/module/instructor/pages/chat/MessagesContent";
 import CoursesContent from "~/module/instructor/pages/course/CoursesContent";
+import MyProfileContent from "~/module/instructor/pages/profile/MyProfileContent";
+import QuizContent from "~/module/instructor/pages/quiz/QuizContent";
+import StudentsContent from "~/module/instructor/pages/student/StudentsContent";
 
 type MenuItem =
   | 'Dashboard'
@@ -100,7 +100,7 @@ const InstructorDashboard = () => {
 
   return (
 
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-8xl mx-auto px-4 py-8">
           <div className="grid lg:grid-cols-4 gap-6">
             {/* Sidebar */}
             <div className="lg:col-span-1">

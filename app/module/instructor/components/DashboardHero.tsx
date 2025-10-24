@@ -11,7 +11,7 @@ const DashboardHeroInstructor = () => {
   const handleErrorClick = () => {
  toast.error("Có lỗi xảy ra khi xóa!");  };
   return (
-    <div className="max-w-7xl mx-auto px-4 -mt-6 mt-6">
+    <div className="max-w-8xl mx-auto px-4 -mt-6 mt-6">
       <div className="relative bg-gradient-to-r from-violet-900/50 via-purple-900/50 to-slate-900 rounded-2xl p-6 overflow-hidden shadow-md">
         {/* Decorative circles */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/20 rounded-full blur-3xl" />

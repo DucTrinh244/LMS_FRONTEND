@@ -27,14 +27,14 @@ import {
 } from 'lucide-react';
 import React, { useState, type JSX } from 'react';
 import CategoryContent from '~/module/admin/pages/category/CategoryPage';
-import CertificatesContent from '~/module/admin/pages/CertificatesContent';
-import CoursesContent from '~/module/admin/pages/CoursesContent';
-import EnrollmentsContent from '~/module/admin/pages/EnrollmentsContent';
-import InstructorsContent from '~/module/admin/pages/InstructorsContent';
+import CertificatesContent from '~/module/admin/pages/certificates/CertificatesContent';
+import CoursesContent from '~/module/admin/pages/course/CoursesContent';
+import EnrollmentsContent from '~/module/admin/pages/enrollment/EnrollmentsContent';
+import InstructorsContent from '~/module/admin/pages/instructor/InstructorsContent';
 import MessagesContent from '~/module/admin/pages/message/MessagesContent';
 import ReportsContent from '~/module/admin/pages/ReportsContent';
 import RevenueContent from '~/module/admin/pages/RevenueContent';
-import ReviewsContent from '~/module/admin/pages/ReviewsContent';
+import ReviewsContent from '~/module/admin/pages/reviews/ReviewsContent';
 import SettingsContent from '~/module/admin/pages/SettingsContent';
 import StudentsContent from '~/module/admin/pages/student/StudentsContent';
 import UsersManagementContent from '~/module/admin/pages/user/UsersManagementContent';
@@ -152,7 +152,7 @@ const AdminDashboard: React.FC = () => {
                 <input
                   type="text"
                   placeholder="Search courses, students, instructors..."
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition text-black bg-white"
                 />
               </div>
             </div>
