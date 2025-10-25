@@ -21,7 +21,7 @@ const CategoryPage: React.FC = () => {
   } = useCategory();
 
   // Loading & Error
-  if (loading) return <p>Đang tải danh mục...</p>;
+  if (loading) return <p className="text-black">Đang tải danh mục...</p>;
   if (error) return <p className="text-red-500">Lỗi: {error}</p>;
 
   // 🔥 Hàm xóa danh mục

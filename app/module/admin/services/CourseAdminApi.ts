@@ -1,11 +1,11 @@
 // import axios from 'axios'
 // import type { Category, CategoryPayload } from '~/module/admin/types/Category'
 
-import type { CategoryRequest } from '~/module/admin/types/Category'
+import type { CourseEditAdminRequest } from '~/module/admin/types/Course'
 import httpClient from '~/services/httpClient'
 
 export const courseAdminService = {
-  updateCourseAdmin: (id: string, data: CategoryRequest): Promise<any> => {
+  updateCourseAdmin: (id: string, data: CourseEditAdminRequest): Promise<any> => {
     return httpClient.put(`/category/${id}`, data).then((res) => res.data)
   },
 
@@ -21,6 +21,6 @@ export const courseAdminService = {
   },
 
   deleteCourseAdmin: (id: string): Promise<any> => {
-    return httpClient.delete(`/category/${id}`).then((res) => res.data)
+    return httpClient.delete(`/course/${id}`).then((res) => res.data)
   }
 }

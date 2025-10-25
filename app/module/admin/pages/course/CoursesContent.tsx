@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react';
 import React, { useState } from 'react';
+import { useCourseAdmin } from '~/module/admin/hooks/useCourse';
 import { CourseDetailComponent } from '~/module/admin/pages/course/CourseDetail';
 import CourseEdit from '~/module/admin/pages/course/CourseEdit';
 import { CourseList } from '~/module/admin/pages/course/CourseList';
@@ -82,9 +83,18 @@ const CoursesContent: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterInstructor, setFilterInstructor] = useState<string>('all');
+  // const {
+  //   courses,
+  //   loading,
+  //   error,
+  //   deleteCourseAdmin,
+  //   updateCou
+
+  // }= useCourseAdmin();
 
   const categories = ['Development', 'Design', 'Business', 'Marketing', 'Data Science', 'Photography'];
   const instructors = [...new Set(courses.map(c => c.instructor))];
+
 
   const handleViewDetail = (course: Course) => {
     setSelectedCourse(course);

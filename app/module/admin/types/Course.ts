@@ -14,3 +14,6 @@ export interface Course {
   reviews: number
   createdAt: string
 }
+export interface CourseEditAdminRequest{
+  
+}
