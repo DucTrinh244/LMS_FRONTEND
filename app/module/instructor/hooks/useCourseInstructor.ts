@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { courseAdminService } from '~/module/admin/services/CourseAdminApi'
 import type { Course, CourseEditAdminRequest } from '~/module/admin/types/Course'
+import { courseInstructorService } from '~/module/instructor/services/CourseInstructorApi'
 import { useToast } from '~/shared/hooks/useToast'
 
 const COURSE_QUERY_KEY = ['courses']
@@ -25,6 +26,17 @@ export function useCourseInstructor() {
       throw new Error(res.error || 'Không thể tải khóa học')
     },
     retry: 1
+  })
+
+  const createCategoryMutation = useMutation({
+    mutationFn: (data: any) => courseInstructorService.createCourseInstructor(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: COURSE_QUERY_KEY })
+      toast.success('Add successfully !')
+    },
+    onError: () => {
+      toast.error('Have a error!!')
+    }
   })
 
   //Update Category Admin
@@ -57,8 +69,10 @@ export function useCourseInstructor() {
     loading,
     error: error?.message || null,
     refetch,
+    createCategory: createCategoryMutation.mutateAsync,
     editCourseAdmin: (id: string, data: CourseEditAdminRequest) => editCourseAdminMutation.mutateAsync({ id, data }),
     deleteCourseAdmin: deleteCourseAdminMutation.mutateAsync,
+    isCreating: createCategoryMutation.isPending,
     isUpdating: editCourseAdminMutation.isPending,
     isDeleting: deleteCourseAdminMutation.isPending
   }
