@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { courseAdminService } from '~/module/admin/services/CourseAdminApi'
 import type { Course, CourseEditAdminRequest } from '~/module/admin/types/Course'
 import { courseInstructorService } from '~/module/instructor/services/CourseInstructorApi'
+import type { CourseEditInstructorRequest } from '~/module/instructor/types/CourseInstructor'
 import { useToast } from '~/shared/hooks/useToast'
 
 const COURSE_QUERY_KEY = ['courses']
@@ -28,7 +29,7 @@ export function useCourseInstructor() {
     retry: 1
   })
 
-  const createCategoryMutation = useMutation({
+  const createCourseMutation = useMutation({
     mutationFn: (data: any) => courseInstructorService.createCourseInstructor(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: COURSE_QUERY_KEY })
@@ -69,10 +70,10 @@ export function useCourseInstructor() {
     loading,
     error: error?.message || null,
     refetch,
-    createCategory: createCategoryMutation.mutateAsync,
-    editCourseAdmin: (id: string, data: CourseEditAdminRequest) => editCourseAdminMutation.mutateAsync({ id, data }),
-    deleteCourseAdmin: deleteCourseAdminMutation.mutateAsync,
-    isCreating: createCategoryMutation.isPending,
+    createCourse: createCourseMutation.mutateAsync,
+    editCourse: (id: string, data: CourseEditInstructorRequest) => editCourseAdminMutation.mutateAsync({ id, data }),
+    deleteCourse: deleteCourseAdminMutation.mutateAsync,
+    isCreating: createCourseMutation.isPending,
     isUpdating: editCourseAdminMutation.isPending,
     isDeleting: deleteCourseAdminMutation.isPending
   }

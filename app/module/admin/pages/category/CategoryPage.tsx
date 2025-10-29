@@ -20,7 +20,7 @@ const CategoryPage: React.FC = () => {
     isDeleting
   } = useCategory();
 
-  // Loading & Error
+
   if (loading) return <p className="text-black">Đang tải danh mục...</p>;
   if (error) return <p className="text-red-500">Lỗi: {error}</p>;
 

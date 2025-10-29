@@ -3,6 +3,7 @@ import {
   ChevronDown,
   Clock,
   Edit,
+  Eye,
   Grid,
   HelpCircle,
   List,
@@ -13,57 +14,34 @@ import {
 } from "lucide-react";
 import { useState, type FC } from "react";
 import { Link } from "react-router"; // Sửa: react-router-dom
+import { useCourseInstructor } from "~/module/instructor/hooks/useCourseInstructor";
 import { AddCourse } from "~/module/instructor/pages/course/AddCourseInstructor";
+import CourseDetailInstructor from "~/module/instructor/pages/course/DetailCourseInstructor";
+import { EditCourse } from "~/module/instructor/pages/course/EditCourseInstructor";
+import type { AddRequestCourseInstructor } from "~/module/instructor/types/CourseInstructor";
+import { useConfirmDialog } from "~/shared/hooks/useConfirmDialog";
 
-// === GIẢ LẬP EditCourse (nếu chưa có) ===
-const EditCourse: FC<{
-  course: any;
-  onBack: () => void;
-  onSave: (course: any) => void;
-}> = ({ course, onBack, onSave }) => {
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-white">
-              Edit Course: {course.title}
-            </h1>
-            <button
-              onClick={onBack}
-              className="text-slate-400 hover:text-white transition"
-            >
-              Close
-            </button>
-          </div>
-          <p className="text-slate-300 mb-4">
-            This is a placeholder for the Edit Course form.
-          </p>
-          <button
-            onClick={() => {
-              onSave({ ...course, title: course.title + " (Updated)" });
-            }}
-            className="px-5 py-2 bg-violet-600 text-white rounded-lg"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-// === MAIN COMPONENT ===
 const CoursesContent: FC = () => {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
-  const [mode, setMode] = useState<'list' | 'add' | 'edit'>('list');
+  const [mode, setMode] = useState<'list' | 'add' | 'edit'| 'detail'>('list');
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const { confirm } = useConfirmDialog();
 
-  const courses = [
+  const {
+    courses,
+    loading,
+    error,
+    deleteCourse,
+    createCourse,
+    editCourse,
+    isDeleting
+  }=useCourseInstructor();
+  const courses_fake = [
     {
-      id: 1,
+      id: '1',
       title: 'Information About UI/UX Design Degree',
       image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=200&q=80',
       lessons: 11,
@@ -78,7 +56,7 @@ const CoursesContent: FC = () => {
     },
     // ... các course khác
     {
-      id: 9,
+      id: '9',
       title: 'C# Developers Double Your Coding with Visual Studio',
       image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=200&q=80',
       lessons: 11,
@@ -96,40 +74,47 @@ const CoursesContent: FC = () => {
   const statsCards = [
     {
       title: 'Active Courses',
-      count: courses.filter((c) => c.status === 'Published').length,
+      count: courses_fake.filter((c) => c.status === 'Published').length,
       color: 'from-violet-600 to-purple-600',
     },
     {
       title: 'Pending',
-      count: courses.filter((c) => c.status === 'Pending').length,
+      count: courses_fake.filter((c) => c.status === 'Pending').length,
       color: 'from-cyan-500 to-blue-500',
     },
     {
       title: 'Draft',
-      count: courses.filter((c) => c.status === 'Draft').length,
+      count: courses_fake.filter((c) => c.status === 'Draft').length,
       color: 'from-purple-500 to-indigo-500',
     },
     {
       title: 'Free Courses',
-      count: courses.filter((c) => c.price === 0).length,
+      count: courses_fake.filter((c) => c.price === 0).length,
       color: 'from-teal-500 to-cyan-500',
     },
     {
       title: 'Paid Courses',
-      count: courses.filter((c) => c.price > 0).length,
+      count: courses_fake.filter((c) => c.price > 0).length,
       color: 'from-violet-600 to-pink-600',
     },
   ];
 
-  const filteredCourses = courses
+  const filteredCourses = courses_fake
     .filter((course) =>
       course.title.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .filter(
       (course) => selectedStatus === 'All' || course.status === selectedStatus
     );
+  const handleView = (id: string) => {
+    const course = courses.find((c) => c.id === id);
+    if (course) {
+      setSelectedCourse(course);
+      setMode('detail');
+    }
+  }
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string) => {
     const course = courses.find((c) => c.id === id);
     if (course) {
       setSelectedCourse(course);
@@ -137,13 +122,15 @@ const CoursesContent: FC = () => {
     }
   };
 
-  const handleDelete = (id: number) => {
-    console.log('Deleting course ID:', id);
-    // TODO: Implement delete logic
+  const handleDelete = async (id: string) => {
+    const ok = await confirm('Are you sure you want to delete this course?');
+    if (ok) {
+      // await deleteC(id);
+    }
   };
 
-  const handleSaveAdd = (newCourse: any) => {
-    console.log('New course created:', newCourse);
+  const handleSaveAdd =async (newCourse: AddRequestCourseInstructor) => {
+    await createCourse(newCourse);
     setMode('list');
   };
 
@@ -171,7 +158,20 @@ const CoursesContent: FC = () => {
     );
   }
 
-  // === MODE: LIST (danh sách) ===
+  if (mode === 'detail' && selectedCourse) {
+    return (
+      <CourseDetailInstructor
+        course={selectedCourse}
+        onBack={() => {
+          setMode('detail');
+          setSelectedCourse(null);
+        }} 
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
       <div className="max-w-7xl mx-auto">
@@ -352,6 +352,12 @@ const CoursesContent: FC = () => {
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-2">
                           <button
+                            onClick={() => handleView(course.id)}
+                            className="p-2 hover:bg-slate-600/50 rounded-lg transition"
+                          >
+                            <Eye className="w-4 h-4 text-violet-400" />
+                          </button>
+                          <button
                             onClick={() => handleEdit(course.id)}
                             className="p-2 hover:bg-slate-600/50 rounded-lg transition"
                           >
@@ -426,9 +432,8 @@ const CoursesContent: FC = () => {
                     </span>
                     <div className="flex items-center gap-2">
                       <Link
-                        to={`/courses/${course.id}`}
-                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition font-medium text-sm flex items-center gap-1.5 group"
-                      >
+                        onClick={() => handleEdit(course.id)}
+                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition font-medium text-sm flex items-center gap-1.5 group" to={""}                      >
                         View Course
                       </Link>
                       <button

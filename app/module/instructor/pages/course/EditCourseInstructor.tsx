@@ -1,18 +1,18 @@
 // src/components/courses/EditCourse.tsx
-import type { FC } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import type { AddRequestCourseInstructor } from '~/module/instructor/types/CourseInstructor';
+import type { FC } from 'react';
+import type { AddRequestCourseInstructor, Course, CourseEditInstructorRequest } from '~/module/instructor/types/CourseInstructor';
 
 interface EditCourseProps {
-  course: AddRequestCourseInstructor;
+  course: Course;
   onBack: () => void;
-  onSave: (course: AddRequestCourseInstructor) => void;
+  onSave: (course: CourseEditInstructorRequest) => void;
 }
 
 export const EditCourse: FC<EditCourseProps> = ({ course, onBack, onSave }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-4 md:p-8">
-      {/* <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={onBack}
@@ -64,7 +64,7 @@ export const EditCourse: FC<EditCourseProps> = ({ course, onBack, onSave }) => {
             </button>
           </div>
         </div>
-      </div> */}
+      </div>
     </div>
   );
 };

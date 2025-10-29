@@ -49,7 +49,7 @@ export const AddCourse: FC<AddCourseProps> = ({ onBack, onSave, course }) => {
     requirements: course?.requirements || '',
     objectives: course?.objectives || '',
     targetAudience: course?.targetAudience || '',
-    level: course?.level || LEVELS[0],
+    level: course?.level || 1,
     language: course?.language || 'vi',
     certificateEnabled: course?.certificateEnabled ?? true,
   });
@@ -73,7 +73,7 @@ export const AddCourse: FC<AddCourseProps> = ({ onBack, onSave, course }) => {
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else if (name === 'level') {
       const selectedLevel = LEVELS.find((l) => l.id === Number(value))!;
-      setFormData((prev) => ({ ...prev, level: selectedLevel }));
+      setFormData((prev) => ({ ...prev, level: selectedLevel.id }));
     } else if (name === 'price' || name === 'durationHours' || name === 'maxStudents') {
       setFormData((prev) => ({ ...prev, [name]: Number(value) }));
     } else {
@@ -196,7 +196,7 @@ export const AddCourse: FC<AddCourseProps> = ({ onBack, onSave, course }) => {
               </label>
               <select
                 name="level"
-                value={formData.level.id}
+                value={formData.level}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
