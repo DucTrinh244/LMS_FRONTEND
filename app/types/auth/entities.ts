@@ -54,10 +54,10 @@ export interface ApiError {
 }
 
 export enum UserRole {
-  STUDENT = 'student',
-  INSTRUCTOR = 'instructor',
-  ADMIN = 'admin',
-  MODERATOR = 'moderator'
+  STUDENT = 'Student',
+  INSTRUCTOR = 'Instructor',
+  ADMIN = 'Admin',
+  MODERATOR = 'Moderator'
 }
 export interface AuthState {
   user: User | null

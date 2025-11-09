@@ -96,12 +96,13 @@ const Login: React.FC = () => {
           // Gọi getProfile để lấy thông tin user mới nhất
           import('~/module/auth/services/auth').then(({ authService }) => {
             authService.getProfile().then(res => {
-              const userRole = res.user.role;
+              const userRole = res.user.roles[0];
               
               // Nếu có trang muốn truy cập trước đó và không phải login
               if (from && from !== '/login' && from !== '/register') {
                 navigate(from, { replace: true });
               } else {
+                console.log('User role after login:', userRole);
                 // Navigate đến dashboard theo role
                 const dashboardPath = getDashboardByRole(userRole);
                 navigate(dashboardPath, { replace: true });
