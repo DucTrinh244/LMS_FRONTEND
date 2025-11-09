@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '~/context/authContext';
+import { useToast } from '~/shared/hooks/useToast';
 import { UserRole } from '~/types/auth/entities';
 import type { LoginFormData } from '~/types/auth/login';
 import { mapFormDataToLoginRequest } from '~/utils/helpers/AuthHeper';
@@ -24,6 +24,7 @@ const Login: React.FC = () => {
   const { login, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const {toast} = useToast();
   
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -85,7 +86,7 @@ const Login: React.FC = () => {
       const loginRequest = mapFormDataToLoginRequest(formData);
       await login(loginRequest);
       
-      toast.success('Login successful! 🎉');
+      toast.success('Login successfully !')
 
       // Đợi một chút để state update
       setTimeout(() => {
