@@ -122,7 +122,7 @@ const Register: React.FC = () => {
       const registerRequest = mapFormDataToRegisterRequest(formData);
       await register(registerRequest);
       console.log('Registration successful:', formData);
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       console.error('Registration failed:', error);
       setErrors({ email: 'An account with this email already exists' });

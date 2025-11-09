@@ -1,6 +1,6 @@
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useCategory } from "~/module/admin/hooks/useCategory";
+import { useCategoryAdmin } from "~/module/admin/hooks/useCategoryAdmin";
 import type { CategoryDetail } from "~/module/admin/types/Category";
 import { useConfirmDialog } from "~/shared/hooks/useConfirmDialog";
 import AddCategory from "./AddCategory";
@@ -18,7 +18,7 @@ const CategoryPage: React.FC = () => {
     createCategory, 
     updateCategory,
     isDeleting
-  } = useCategory();
+  } = useCategoryAdmin();
 
 
   if (loading) return <p className="text-black">Đang tải danh mục...</p>;

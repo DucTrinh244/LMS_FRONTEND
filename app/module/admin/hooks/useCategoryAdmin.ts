@@ -5,7 +5,7 @@ import { useToast } from '~/shared/hooks/useToast'
 
 const CATEGORY_QUERY_KEY = ['categories']
 
-export function useCategory() {
+export function useCategoryAdmin() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 

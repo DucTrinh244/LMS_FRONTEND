@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { authService } from '~/module/auth/services/auth'
-import type { User } from '~/types/auth/entities'
-import type { LoginRequest, } from '~/types/auth/login'
+import type { UserContext } from '~/types/auth/entities'
+import type { LoginRequest } from '~/types/auth/login'
 import type { RegisterRequest } from '~/types/auth/register'
 
 interface AuthContextType {
-  user: User | null
+  user: UserContext | null
+  isLoading: boolean
+  isAuthenticated: boolean
   login: (data: LoginRequest) => Promise<void>
   register: (data: RegisterRequest) => Promise<void>
   logout: () => void
@@ -14,37 +16,103 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<UserContext | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
+  // 🔹 Khi app khởi động, kiểm tra token và lấy profile
   useEffect(() => {
     const accessToken = localStorage.getItem('accessToken')
+    console.log('🔑 Token from localStorage:', accessToken)
+
     if (accessToken) {
-      authService.getProfile().then(res => setUser(res.user)).catch(() => logout())
+      authService.getProfile()
+        .then(res => {
+          console.log('✅ getProfile success:', res)
+
+          const userContext: UserContext = {
+            id: res.value.id,
+            email: res.value.email,
+            firstName: res.value.firstName,
+            lastName: res.value.lastName,
+            fullName: res.value.fullName,
+            avatarUrl: res.value.avatarUrl,
+            phone: res.value.phone,
+            gender: res.value.gender,
+            emailVerified: res.value.emailVerified,
+            isActive: res.value.isActive,
+            roles: res.value.roles
+          }
+
+          setUser(userContext)
+          console.log('👤 User context set:', userContext)
+        })
+        .catch((error) => {
+          console.error('❌ getProfile failed:', error)
+          logout()
+        })
+        .finally(() => {
+          setIsLoading(false)
+        })
+    } else {
+      setIsLoading(false)
     }
   }, [])
 
-  const login = async (data:LoginRequest) => {
-    const res = await authService.login( data)
+  // 🔹 Login
+  const login = async (data: LoginRequest) => {
+    const res = await authService.login(data)
     if (res.isSuccess && res.value) {
       localStorage.setItem('accessToken', res.value.accessToken)
       localStorage.setItem('refreshToken', res.value.refreshToken)
-      setUser(res.value.user)
+
+      const userContext: UserContext = {
+        id: res.value.id,
+        email: res.value.email,
+        firstName: res.value.firstName,
+        lastName: res.value.lastName,
+        fullName: res.value.fullName,
+        avatarUrl: res.value.avatarUrl,
+        phone: res.value.phone,
+        gender: res.value.gender,
+        emailVerified: res.value.emailVerified,
+        isActive: res.value.isActive,
+        roles: res.value.roles
+      }
+
+      setUser(userContext)
     } else {
       throw new Error(res.error?.message)
     }
   }
 
+  // 🔹 Register
   const register = async (data: RegisterRequest) => {
     const res = await authService.register(data)
     if (res.isSuccess && res.value) {
       localStorage.setItem('accessToken', res.value.accessToken)
       localStorage.setItem('refreshToken', res.value.refreshToken)
-      setUser(res.value.user)
+
+      const userContext: UserContext = {
+        id: res.value.id,
+        email: res.value.email,
+        firstName: res.value.firstName,
+        lastName: res.value.lastName,
+        fullName: res.value.fullName,
+        avatarUrl: res.value.avatarUrl,
+        phone: res.value.phone,
+        gender: res.value.gender,
+        emailVerified: res.value.emailVerified,
+        isActive: res.value.isActive,
+        roles: res.value.roles
+      }
+
+      setUser(userContext)
     } else {
       throw new Error(res.error?.message)
     }
   }
 
+  // 🔹 Logout
   const logout = () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
@@ -52,7 +120,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isLoading, 
+        isAuthenticated: !!user,
+        login, 
+        logout, 
+        register 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

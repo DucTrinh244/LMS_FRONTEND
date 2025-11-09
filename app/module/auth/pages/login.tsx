@@ -1,12 +1,30 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '~/context/authContext';
+import { UserRole } from '~/types/auth/entities';
 import type { LoginFormData } from '~/types/auth/login';
 import { mapFormDataToLoginRequest } from '~/utils/helpers/AuthHeper';
 
+// Helper function để lấy dashboard path theo role
+const getDashboardByRole = (role?: UserRole): string => {
+  switch (role) {
+    case UserRole.ADMIN:
+      return '/admin';
+    case UserRole.INSTRUCTOR:
+      return '/instructor'; 
+    case UserRole.STUDENT:
+      return '/student';
+    default:
+      return '/';
+  }
+};
+
 const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
@@ -15,6 +33,17 @@ const Login: React.FC = () => {
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Lấy trang user muốn truy cập trước khi bị redirect về login
+  const from = location.state?.from?.pathname;
+
+  // Nếu đã login rồi thì redirect về dashboard
+  useEffect(() => {
+    if (user && !authLoading) {
+      const dashboardPath = getDashboardByRole(user.roles[0]);
+      navigate(dashboardPath, { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -50,21 +79,57 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    console.log('Submit clicked'); // Debug 1
 
     setIsLoading(true);
     try {
       const loginRequest = mapFormDataToLoginRequest(formData);
       await login(loginRequest);
-      console.log('Login successful:', formData);
-      navigate('/student/dashboard');
-    } catch (error) {
+      
+      toast.success('Login successful! 🎉');
+
+      // Đợi một chút để state update
+      setTimeout(() => {
+        // Lấy user từ localStorage (vì context có thể chưa update kịp)
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+          // Gọi getProfile để lấy thông tin user mới nhất
+          import('~/module/auth/services/auth').then(({ authService }) => {
+            authService.getProfile().then(res => {
+              const userRole = res.user.role;
+              
+              // Nếu có trang muốn truy cập trước đó và không phải login
+              if (from && from !== '/login' && from !== '/register') {
+                navigate(from, { replace: true });
+              } else {
+                // Navigate đến dashboard theo role
+                const dashboardPath = getDashboardByRole(userRole);
+                navigate(dashboardPath, { replace: true });
+              }
+            });
+          });
+        }
+      }, 100);
+
+    } catch (error: any) {
       console.error('Login failed:', error);
+      toast.error(error.message || 'Invalid email or password');
       setErrors({ email: 'Invalid email or password' });
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Hiển thị loading khi đang check auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-violet-500"></div>
+          <p className="mt-4 text-slate-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col justify-center py-8 sm:px-6 lg:px-8">
@@ -194,7 +259,8 @@ const Login: React.FC = () => {
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent 
                   text-sm font-medium rounded-md text-white bg-gradient-to-r from-violet-600 to-purple-600 
                   hover:shadow-violet-500/50 focus:outline-none focus:ring-2 focus:ring-offset-2 
-                  focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all
+                  hover:shadow-lg disabled:hover:shadow-none"
               >
                 {isLoading && (
                   <div className="absolute left-0 inset-y-0 flex items-center pl-3">
@@ -221,7 +287,10 @@ const Login: React.FC = () => {
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <button className="w-full inline-flex justify-center py-2 px-4 border border-slate-600 rounded-md shadow-sm bg-slate-800 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors">
+              <button 
+                type="button"
+                className="w-full inline-flex justify-center py-2 px-4 border border-slate-600 rounded-md shadow-sm bg-slate-800 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors"
+              >
                 <svg className="h-5 w-5 text-slate-300" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -231,7 +300,10 @@ const Login: React.FC = () => {
                 <span className="ml-2">Google</span>
               </button>
 
-              <button className="w-full inline-flex justify-center py-2 px-4 border border-slate-600 rounded-md shadow-sm bg-slate-800 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors">
+              <button 
+                type="button"
+                className="w-full inline-flex justify-center py-2 px-4 border border-slate-600 rounded-md shadow-sm bg-slate-800 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors"
+              >
                 <svg className="h-5 w-5 text-slate-300" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
@@ -245,4 +317,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Login

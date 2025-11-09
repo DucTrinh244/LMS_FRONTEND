@@ -3,7 +3,6 @@ export interface User {
   email: string
   firstName: string
   lastName: string
-  // role: UserRole
   phone: string
   avatarUrl: string
   dateOfBirth: string
@@ -14,9 +13,35 @@ export interface User {
   createdAt: string
   updatedAt: string
   fullName: string
+  role: UserRole
+}
+
+export interface UserContext {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  fullName: string
+  avatarUrl: string | null
+  phone: string | null
+  gender: number
+  emailVerified: boolean
+  isActive: boolean
+  roles: UserRole[]
 }
 
 export interface AuthValue {
+  isActive: boolean
+  emailVerified: boolean
+  gender: number
+  phone: string | null
+  avatarUrl: string | null
+  fullName: string
+  lastName: string
+  firstName: string
+  email: string
+  id: string
+  roles: UserRole[]
   user: User
   accessToken: string
   refreshToken: string
@@ -29,7 +54,7 @@ export interface ApiError {
 }
 
 export enum UserRole {
-  USER = 'student',
+  STUDENT = 'student',
   INSTRUCTOR = 'instructor',
   ADMIN = 'admin',
   MODERATOR = 'moderator'
