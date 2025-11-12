@@ -4,8 +4,8 @@ export const sharedApi = {
   // Category
   getNameAndIdOfAllCategories: (): Promise<any> => {
     return httpClient
-      .get('/short')
-      .then((res) => res.data)
+      .get('/Category/short')
+      .then((res) => res.data.value)
       .then((data) => data?.categories ?? data)
   }
 }

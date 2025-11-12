@@ -1,42 +1,38 @@
-import { ChevronLeft } from 'lucide-react';
-import type { FC } from 'react';
-import { useEffect, useState } from 'react';
-import type { AddRequestCourseInstructor, LanguageCourse, LevelCourse } from '~/module/instructor/types/CourseInstructor';
-
+import { ChevronLeft } from 'lucide-react'
+import type { FC } from 'react'
+import { useEffect, useState } from 'react'
+import type {
+  AddRequestCourseInstructor,
+  LanguageCourse,
+  LevelCourse,
+} from '~/module/instructor/types/CourseInstructor'
+import { sharedApi } from '~/services/sharedApi'
 
 interface AddCourseProps {
-  onBack: () => void;
-  onSave: (course: AddRequestCourseInstructor) => void;
-  course?: AddRequestCourseInstructor | null;
+  onBack: () => void
+  onSave: (course: AddRequestCourseInstructor) => void
+  course?: AddRequestCourseInstructor | null
 }
 
-// Giả lập danh sách level và category (thay bằng API thật sau)
+// Giả lập danh sách level
 const LEVELS: LevelCourse[] = [
   { id: 1, name: 'Beginner' },
   { id: 2, name: 'Intermediate' },
   { id: 3, name: 'Advanced' },
   { id: 4, name: 'All Levels' },
-];
+]
 
-const CATEGORIES = [
-  { id: '1', name: 'Web Development' },
-  { id: '2', name: 'Design' },
-  { id: '3', name: 'Mobile Development' },
-  { id: '4', name: 'Data Science' },
-  { id: '5', name: 'Business' },
-];
-
-const LANGUAGES : LanguageCourse[]= [
-  {id:'vi',name:'English'},
-  {id:'vi',name:'Spanish'},
-  {id:'vi',name:'French'},
-  {id:'vi',name:'German'},
-  {id:'vi',name:'Chinese'},
-  {id:'vi',name:'Vietnamese'},
-];
+const LANGUAGES: LanguageCourse[] = [
+  { id: 'en', name: 'English' },
+  { id: 'es', name: 'Spanish' },
+  { id: 'fr', name: 'French' },
+  { id: 'de', name: 'German' },
+  { id: 'zh', name: 'Chinese' },
+  { id: 'vi', name: 'Vietnamese' },
+]
 
 export const AddCourse: FC<AddCourseProps> = ({ onBack, onSave, course }) => {
-  const isEdit = !!course;
+  const isEdit = !!course
 
   const [formData, setFormData] = useState<AddRequestCourseInstructor>({
     title: course?.title || '',
@@ -52,54 +48,60 @@ export const AddCourse: FC<AddCourseProps> = ({ onBack, onSave, course }) => {
     level: course?.level || 1,
     language: course?.language || 'vi',
     certificateEnabled: course?.certificateEnabled ?? true,
-  });
+  })
 
-  // Sync khi course thay đổi (edit mode)
+  // 🔹 Tạo state để lưu categories
+  const [CATEGORIES, setCATEGORIES] = useState<{ id: number; name: string }[]>([])
+
+  // 🔹 Gọi API lấy danh mục
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await sharedApi.getNameAndIdOfAllCategories()
+        setCATEGORIES(data)
+        console.log('CATEGORIES:', data)
+      } catch (error) {
+        console.error('Lỗi khi tải category:', error)
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
+  // Khi `course` thay đổi (edit mode)
   useEffect(() => {
     if (course) {
-      setFormData({ ...course });
+      setFormData({ ...course })
     }
-  }, [course]);
+  }, [course])
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value, type } = e.target;
+    const { name, value, type } = e.target
 
     if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData((prev) => ({ ...prev, [name]: checked }));
+      const checked = (e.target as HTMLInputElement).checked
+      setFormData((prev) => ({ ...prev, [name]: checked }))
     } else if (name === 'level') {
-      const selectedLevel = LEVELS.find((l) => l.id === Number(value))!;
-      setFormData((prev) => ({ ...prev, level: selectedLevel.id }));
-    } else if (name === 'price' || name === 'durationHours' || name === 'maxStudents') {
-      setFormData((prev) => ({ ...prev, [name]: Number(value) }));
+      setFormData((prev) => ({ ...prev, level: Number(value) }))
+    } else if (['price', 'durationHours', 'maxStudents'].includes(name)) {
+      setFormData((prev) => ({ ...prev, [name]: Number(value) }))
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }))
     }
-  };
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    // Validation cơ bản
-    if (!formData.title.trim()) {
-      alert('Please enter a course title');
-      return;
-    }
-    if (!formData.categoryId) {
-      alert('Please select a category');
-      return;
-    }
-    if (formData.price < 0) {
-      alert('Price cannot be negative');
-      return;
-    }
+    if (!formData.title.trim()) return alert('Please enter a course title')
+    if (!formData.categoryId) return alert('Please select a category')
+    if (formData.price < 0) return alert('Price cannot be negative')
 
-    onSave(formData);
-  };
+    onSave(formData)
+  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-4 md:p-8">
