@@ -1,17 +1,14 @@
-import CourseDetailContent from '~/module/landing/components/CourseDetailContent';
-import Footer from '~/shared/components/ui/Footer';
-import Header from '~/shared/components/ui/Header';
+import CourseDetailContent from '~/module/landing/components/CourseDetailContent'
+import MainLayout from '~/layouts/MainLayout'
 
-const courseDetailPage = () => {
+const CourseDetailPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <Header />
-      <main className="pt-20"> {/* Adds padding-top equal to header height (80px) */}
-        <CourseDetailContent/>
-      </main>
-        <Footer />
-    </div>
-  );
-};
+    <MainLayout>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <CourseDetailContent />
+      </div>
+    </MainLayout>
+  )
+}
 
-export default courseDetailPage;
+export default CourseDetailPage

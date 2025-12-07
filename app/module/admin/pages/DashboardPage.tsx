@@ -24,20 +24,21 @@ import {
   TrendingUp,
   Users,
   X
-} from 'lucide-react';
-import React, { useState, type JSX } from 'react';
-import CategoryContent from '~/module/admin/pages/category/CategoryPage';
-import CertificatesContent from '~/module/admin/pages/certificates/CertificatesContent';
-import CoursesContent from '~/module/admin/pages/course/CoursesContent';
-import EnrollmentsContent from '~/module/admin/pages/enrollment/EnrollmentsContent';
-import InstructorsContent from '~/module/admin/pages/instructor/InstructorsContent';
-import MessagesContent from '~/module/admin/pages/message/MessagesContent';
-import ReportsContent from '~/module/admin/pages/ReportsContent';
-import RevenueContent from '~/module/admin/pages/RevenueContent';
-import ReviewsContent from '~/module/admin/pages/reviews/ReviewsContent';
-import SettingsContent from '~/module/admin/pages/SettingsContent';
-import StudentsContent from '~/module/admin/pages/student/StudentsContent';
-import UsersManagementContent from '~/module/admin/pages/user/UsersManagementContent';
+} from 'lucide-react'
+import React, { useState, type JSX } from 'react'
+import CategoryContent from '~/module/admin/pages/category/CategoryPage'
+import CertificatesContent from '~/module/admin/pages/certificates/CertificatesContent'
+import CoursesContent from '~/module/admin/pages/course/CoursesContent'
+import EnrollmentsContent from '~/module/admin/pages/enrollment/EnrollmentsContent'
+import InstructorsContent from '~/module/admin/pages/instructor/InstructorsContent'
+import MessagesContent from '~/module/admin/pages/message/MessagesContent'
+import ReportsContent from '~/module/admin/pages/ReportsContent'
+import RevenueContent from '~/module/admin/pages/RevenueContent'
+import ReviewsContent from '~/module/admin/pages/reviews/ReviewsContent'
+import SettingsContent from '~/module/admin/pages/SettingsContent'
+import StudentsContent from '~/module/admin/pages/student/StudentsContent'
+import UsersManagementContent from '~/module/admin/pages/user/UsersManagementContent'
+import { AdminRoute } from '~/shared/components/auth/RouteGuard'
 
 // Import individual components for each menu item
 // import DashboardContent from './DashboardContent';
@@ -116,6 +117,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
+    <AdminRoute>
     <div className="min-h-screen bg-gray-50">
       {/* Top Navigation Bar */}
       <header className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
@@ -232,8 +234,9 @@ const AdminDashboard: React.FC = () => {
         </main>
       </div>
     </div>
-  );
-};
+    </AdminRoute>
+  )
+}
 
 // Example DashboardContent component (reusing the original main content)
 const DashboardContent: React.FC = () => {

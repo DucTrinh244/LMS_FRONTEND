@@ -1,20 +1,30 @@
-import { BookOpen, Globe, Heart, Menu, ShoppingCart, X } from 'lucide-react';
-import { useState } from 'react';
-import { useAuth } from '~/context/authContext'; // ✅ import context (điều chỉnh theo đường dẫn của bạn)
+import { BookOpen, Globe, Heart, Menu, ShoppingCart, X } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useLocation } from 'react-router'
+import { useAuth } from '~/context/authContext'
+import { getDefaultRedirectPath } from '~/shared/components/auth/RouteGuard'
 
 const Header = () => {
-  const { user, logout } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [courseDropdownOpen, setCourseDropdownOpen] = useState(false);
-  const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const { user, logout } = useAuth()
+  const location = useLocation()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [courseDropdownOpen, setCourseDropdownOpen] = useState(false)
+  const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false)
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false)
+
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/'
+    }
+    return location.pathname.startsWith(path)
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg z-50 border-b border-slate-800">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-2.5 rounded-xl shadow-lg">
               <BookOpen className="w-7 h-7 text-white" />
             </div>
@@ -24,87 +34,101 @@ const Header = () => {
                 Learning Management
               </span>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
-            <a
-              href="#home"
-              className="px-4 py-2 text-violet-400 font-medium rounded-lg hover:bg-slate-800 transition"
+            <Link
+              to="/"
+              className={`px-4 py-2 rounded-lg hover:bg-slate-800 transition ${
+                isActive('/') && location.pathname === '/'
+                  ? 'text-violet-400 font-medium'
+                  : 'text-slate-300 hover:text-white'
+              }`}
             >
               Home
-            </a>
+            </Link>
             <div
               className="relative"
               onMouseEnter={() => setCourseDropdownOpen(true)}
               onMouseLeave={() => setCourseDropdownOpen(false)}
             >
-              <a
-                href="#courses"
-                className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              <Link
+                to="/courses"
+                className={`px-4 py-2 rounded-lg hover:bg-slate-800 transition ${
+                  isActive('/courses') || isActive('/course')
+                    ? 'text-violet-400 font-medium'
+                    : 'text-slate-300 hover:text-white'
+                }`}
               >
                 Courses
-              </a>
+              </Link>
               {courseDropdownOpen && (
                 <div className="absolute top-full left-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg border border-slate-700 py-2 z-50">
-                  <a
-                    href="/courses"
+                  <Link
+                    to="/courses"
                     className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition"
                   >
-                    Courses
-                  </a>
-                  <a
-                    href="/course/detail"
+                    Tất cả khóa học
+                  </Link>
+                  <Link
+                    to="/course/category"
                     className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition"
                   >
-                    Course Detail
-                  </a>
-                  <a
-                    href="/course/category"
-                    className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition"
-                  >
-                    Category
-                  </a>
+                    Danh mục
+                  </Link>
                 </div>
               )}
             </div>
-            <a
-              href="/instructors"
-              className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition"
+            <Link
+              to="/instructors"
+              className={`px-4 py-2 rounded-lg hover:bg-slate-800 transition ${
+                isActive('/instructors')
+                  ? 'text-violet-400 font-medium'
+                  : 'text-slate-300 hover:text-white'
+              }`}
             >
               Instructors
-            </a>
-            <a
-              href="/about"
-              className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition"
+            </Link>
+            <Link
+              to="/about"
+              className={`px-4 py-2 rounded-lg hover:bg-slate-800 transition ${
+                isActive('/about')
+                  ? 'text-violet-400 font-medium'
+                  : 'text-slate-300 hover:text-white'
+              }`}
             >
               About
-            </a>
-            <a
-              href="/blog"
-              className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition"
-            >
-              Blog
-            </a>
-            <a
-              href="/contact"
-              className="px-4 py-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition"
+            </Link>
+            <Link
+              to="/contact"
+              className={`px-4 py-2 rounded-lg hover:bg-slate-800 transition ${
+                isActive('/contact')
+                  ? 'text-violet-400 font-medium'
+                  : 'text-slate-300 hover:text-white'
+              }`}
             >
               Contact
-            </a>
+            </Link>
           </nav>
 
           {/* Actions */}
           <div className="hidden lg:flex items-center gap-3">
-            <button className="p-2.5 hover:bg-slate-800 rounded-lg transition group relative">
+            <Link
+              to="/wishlist"
+              className="p-2.5 hover:bg-slate-800 rounded-lg transition group relative"
+            >
               <Heart className="w-5 h-5 text-slate-300 group-hover:text-rose-400 transition" />
-            </button>
-            <button className="p-2.5 hover:bg-slate-800 rounded-lg transition relative group">
+            </Link>
+            <Link
+              to="/cart"
+              className="p-2.5 hover:bg-slate-800 rounded-lg transition relative group"
+            >
               <ShoppingCart className="w-5 h-5 text-slate-300 group-hover:text-violet-400 transition" />
               <span className="absolute -top-1 -right-1 bg-violet-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
                 3
               </span>
-            </button>
+            </Link>
 
             {/* Language */}
             <div className="relative">
@@ -145,21 +169,26 @@ const Header = () => {
                   <span>{user.firstName}</span>
                 </button>
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg border border-slate-700 shadow-lg py-2">
-                    <a
-                      href="/profile"
+                  <div className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg border border-slate-700 shadow-lg py-2 z-50">
+                    <Link
+                      to="/profile"
                       className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition"
+                      onClick={() => setUserDropdownOpen(false)}
                     >
                       Profile
-                    </a>
-                    <a
-                      href="/dashboard"
+                    </Link>
+                    <Link
+                      to={user.roles?.length > 0 ? getDefaultRedirectPath(user.roles) : '/'}
                       className="block px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-white transition"
+                      onClick={() => setUserDropdownOpen(false)}
                     >
                       Dashboard
-                    </a>
+                    </Link>
                     <button
-                      onClick={logout}
+                      onClick={() => {
+                        logout()
+                        setUserDropdownOpen(false)
+                      }}
                       className="w-full text-left px-4 py-2 text-rose-400 hover:bg-slate-700 hover:text-rose-300 transition"
                     >
                       Logout
@@ -169,18 +198,18 @@ const Header = () => {
               </div>
             ) : (
               <>
-                <a
-                  href="/login"
+                <Link
+                  to="/login"
                   className="px-5 py-2.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition font-medium"
                 >
                   Sign In
-                </a>
-                <a
-                  href="/register"
+                </Link>
+                <Link
+                  to="/register"
                   className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-violet-500/50 transition font-medium"
                 >
                   Get Started
-                </a>
+                </Link>
               </>
             )}
           </div>
@@ -202,42 +231,61 @@ const Header = () => {
         {mobileMenuOpen && (
           <div className="lg:hidden pb-6 border-t border-slate-800 mt-2 pt-4">
             <nav className="flex flex-col gap-2">
-              <a
-                href="#home"
-                className="px-4 py-3 text-violet-400 font-medium bg-slate-800 rounded-lg"
+              <Link
+                to="/"
+                className={`px-4 py-3 rounded-lg transition ${
+                  isActive('/') && location.pathname === '/'
+                    ? 'text-violet-400 font-medium bg-slate-800'
+                    : 'text-slate-300 hover:bg-slate-800'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Home
-              </a>
-              <a
-                href="#courses"
-                className="px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg"
+              </Link>
+              <Link
+                to="/courses"
+                className={`px-4 py-3 rounded-lg transition ${
+                  isActive('/courses') || isActive('/course')
+                    ? 'text-violet-400 font-medium bg-slate-800'
+                    : 'text-slate-300 hover:bg-slate-800'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Courses
-              </a>
-              <a
-                href="#instructors"
-                className="px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg"
+              </Link>
+              <Link
+                to="/instructors"
+                className={`px-4 py-3 rounded-lg transition ${
+                  isActive('/instructors')
+                    ? 'text-violet-400 font-medium bg-slate-800'
+                    : 'text-slate-300 hover:bg-slate-800'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Instructors
-              </a>
-              <a
-                href="#about"
-                className="px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg"
+              </Link>
+              <Link
+                to="/about"
+                className={`px-4 py-3 rounded-lg transition ${
+                  isActive('/about')
+                    ? 'text-violet-400 font-medium bg-slate-800'
+                    : 'text-slate-300 hover:bg-slate-800'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 About
-              </a>
-              <a
-                href="#blog"
-                className="px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg"
-              >
-                Blog
-              </a>
-              <a
-                href="#contact"
-                className="px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg"
+              </Link>
+              <Link
+                to="/contact"
+                className={`px-4 py-3 rounded-lg transition ${
+                  isActive('/contact')
+                    ? 'text-violet-400 font-medium bg-slate-800'
+                    : 'text-slate-300 hover:bg-slate-800'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 Contact
-              </a>
+              </Link>
             </nav>
 
             {/* Auth (mobile) */}
@@ -257,20 +305,25 @@ const Header = () => {
                       {user.firstName}
                     </span>
                   </div>
-                  <a
-                    href="/profile"
+                  <Link
+                    to="/profile"
                     className="px-4 py-2 text-slate-300 hover:bg-slate-800 rounded-lg transition"
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     Profile
-                  </a>
-                  <a
-                    href="/dashboard"
+                  </Link>
+                  <Link
+                    to={user.roles?.length > 0 ? getDefaultRedirectPath(user.roles) : '/'}
                     className="px-4 py-2 text-slate-300 hover:bg-slate-800 rounded-lg transition"
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     Dashboard
-                  </a>
+                  </Link>
                   <button
-                    onClick={logout}
+                    onClick={() => {
+                      logout()
+                      setMobileMenuOpen(false)
+                    }}
                     className="px-4 py-2 text-rose-400 hover:bg-slate-800 rounded-lg transition text-left"
                   >
                     Logout
@@ -278,18 +331,20 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <a
-                    href="/login"
-                    className="px-4 py-3 text-white border border-slate-700 rounded-lg hover:bg-slate-800 text-center"
+                  <Link
+                    to="/login"
+                    className="px-4 py-3 text-white border border-slate-700 rounded-lg hover:bg-slate-800 text-center transition"
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     Sign In
-                  </a>
-                  <a
-                    href="/register"
-                    className="px-4 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg text-center"
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-4 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg text-center transition"
+                    onClick={() => setMobileMenuOpen(false)}
                   >
                     Get Started
-                  </a>
+                  </Link>
                 </>
               )}
             </div>

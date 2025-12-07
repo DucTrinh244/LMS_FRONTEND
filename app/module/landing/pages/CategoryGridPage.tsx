@@ -1,23 +1,23 @@
-import BrowseCategories from '~/module/landing/components/categoryGridContenct';
-import Header from '~/shared/components/ui/Header';
-import CourseGridHeader from '~/shared/components/ui/HeaderInfo';
+import BrowseCategories from '~/module/landing/components/categoryGridContenct'
+import MainLayout from '~/layouts/MainLayout'
+import CourseGridHeader from '~/shared/components/ui/HeaderInfo'
 
-const coursePage = () => {
+const CategoryGridPage = () => {
   return (
-    <div>
-      <Header />
-         <main className="pt-20"> {/* Adds padding-top equal to header height (80px) */}
+    <MainLayout>
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
         <CourseGridHeader 
-        title="Course Categor"
-        breadcrumb={[
-          { label: "Home", href: "/" },
-          { label: "Course Category", href: "/courses" },
-          { label: "List" }
-        ]}/>
-      < BrowseCategories/>
-      </main>
-    </div>
-  );
-};
+          title="Danh mục khóa học"
+          breadcrumb={[
+            { label: "Home", href: "/" },
+            { label: "Course Category", href: "/course/category" },
+            { label: "List" }
+          ]}
+        />
+        <BrowseCategories />
+      </div>
+    </MainLayout>
+  )
+}
 
-export default coursePage;
+export default CategoryGridPage
