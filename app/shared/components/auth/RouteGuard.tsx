@@ -71,7 +71,7 @@ export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children 
     )
   }
 
-  // Nếu đã đăng nhập, redirect về dashboard tương ứng
+  // Nếu đã đăng nhập, redirect về dashboard tương ứngush
   if (isAuthenticated && user) {
     const redirectPath = getDefaultRedirectPath(user.roles)
     return <Navigate to={redirectPath} replace />

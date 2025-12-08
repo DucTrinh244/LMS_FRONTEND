@@ -1,22 +1,23 @@
-import InstructorProfile from '~/module/landing/components/InstructorDetailContent';
-import Header from '~/shared/components/ui/Header';
-import CourseGridHeader from '~/shared/components/ui/HeaderInfo';
+import InstructorProfile from '~/module/landing/components/InstructorDetailContent'
+import MainLayout from '~/layouts/MainLayout'
+import CourseGridHeader from '~/shared/components/ui/HeaderInfo'
 
 const InstructorDetailPage = () => {
   return (
-    <div>
-      <Header />
-         <main className="pt-20"> {/* Adds padding-top equal to header height (80px) */}
+    <MainLayout>
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
         <CourseGridHeader 
-        title="Intructors Details"
-        breadcrumb={[
-          { label: "Home", href: "/" },
-          { label: "Instructor detail", href: "/instructors/detail" },
-        ]}/>
-      <InstructorProfile />
-      </main>
-    </div>
-  );
-};
+          title="Chi tiết giảng viên"
+          breadcrumb={[
+            { label: "Home", href: "/" },
+            { label: "Instructors", href: "/instructors" },
+            { label: "Detail", href: "/instructor/detail" }
+          ]}
+        />
+        <InstructorProfile />
+      </div>
+    </MainLayout>
+  )
+}
 
-export default InstructorDetailPage;
+export default InstructorDetailPage

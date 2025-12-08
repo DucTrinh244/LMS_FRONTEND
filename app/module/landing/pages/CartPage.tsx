@@ -1,23 +1,22 @@
-import ShoppingCart from '~/module/landing/components/ShooppingCart';
-import Header from '~/shared/components/ui/Header';
-import CourseGridHeader from '~/shared/components/ui/HeaderInfo';
+import ShoppingCart from '~/module/landing/components/ShooppingCart'
+import MainLayout from '~/layouts/MainLayout'
+import CourseGridHeader from '~/shared/components/ui/HeaderInfo'
 
 const CartPage = () => {
   return (
-    <div>
-      <Header />
-         <main className="pt-20"> {/* Adds padding-top equal to header height (80px) */}
+    <MainLayout>
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
         <CourseGridHeader 
-        title="Cart Course"
-        breadcrumb={[
-          { label: "Home", href: "/" },
-          { label: "Cart", href: "/cart" },
-          { label: "List" }
-        ]}/>
-      < ShoppingCart/>
-      </main>
-    </div>
-  );
-};
+          title="Giỏ hàng"
+          breadcrumb={[
+            { label: "Home", href: "/" },
+            { label: "Cart", href: "/cart" }
+          ]}
+        />
+        <ShoppingCart />
+      </div>
+    </MainLayout>
+  )
+}
 
-export default CartPage;
+export default CartPage
