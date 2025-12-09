@@ -11,6 +11,8 @@ import {
   Users,
   ChevronLeft,
   Trash2,
+  FileText,
+  ChevronRight,
 } from "lucide-react";
 import { Link } from "react-router";
 import type { Course } from "~/module/instructor/types/CourseInstructor";
@@ -22,6 +24,9 @@ interface CourseDetailInstructorProps {
   onBack: () => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onManageChapters?: (courseId: string) => void;
+  onManageLessons?: (courseId: string) => void;
+  onManageQuizzes?: (courseId: string) => void;
 }
 
 const CourseDetailInstructor: FC<CourseDetailInstructorProps> = ({
@@ -29,6 +34,9 @@ const CourseDetailInstructor: FC<CourseDetailInstructorProps> = ({
   onBack,
   onEdit,
   onDelete,
+  onManageChapters,
+  onManageLessons,
+  onManageQuizzes,
 }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
@@ -172,24 +180,83 @@ const CourseDetailInstructor: FC<CourseDetailInstructorProps> = ({
           </div>
         </div>
 
-        {/* Additional Sections (có thể mở rộng) */}
-        <div className="mt-8 grid md:grid-cols-2 gap-6">
-          <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Course Content
-            </h3>
-            <p className="text-slate-400 text-sm">
-              View and manage lessons, quizzes, and assignments.
-            </p>
-            <Link
-              to={`/instructor/courses/${course.id}/content`}
-              className="mt-3 inline-flex items-center gap-2 text-violet-400 hover:text-violet-300 text-sm font-medium"
+        {/* Management Sections */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-white mb-6">Quản lý nội dung khóa học</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Chapters Management */}
+            <div 
+              onClick={() => onManageChapters?.(course.id)}
+              className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6 cursor-pointer hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/20 transition group"
             >
-              Manage Content
-              <ChevronLeft className="w-4 h-4 rotate-180" />
-            </Link>
-          </div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-violet-500/20 rounded-lg group-hover:bg-violet-500/30 transition">
+                  <BookOpen className="w-6 h-6 text-violet-400" />
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-violet-400 transition" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Quản lý Chapters
+              </h3>
+              <p className="text-slate-400 text-sm mb-4">
+                Tạo và quản lý các chương trong khóa học
+              </p>
+              <div className="flex items-center gap-2 text-violet-400 text-sm font-medium">
+                <span>Quản lý</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
 
+            {/* Lessons Management */}
+            <div 
+              onClick={() => onManageLessons?.(course.id)}
+              className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6 cursor-pointer hover:border-cyan-500/50 hover:shadow-xl hover:shadow-cyan-500/20 transition group"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-cyan-500/20 rounded-lg group-hover:bg-cyan-500/30 transition">
+                  <FileText className="w-6 h-6 text-cyan-400" />
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-cyan-400 transition" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Quản lý Lessons
+              </h3>
+              <p className="text-slate-400 text-sm mb-4">
+                Tạo và quản lý các bài học trong khóa học
+              </p>
+              <div className="flex items-center gap-2 text-cyan-400 text-sm font-medium">
+                <span>Quản lý</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Quizzes Management */}
+            <div 
+              onClick={() => onManageQuizzes?.(course.id)}
+              className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6 cursor-pointer hover:border-pink-500/50 hover:shadow-xl hover:shadow-pink-500/20 transition group"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-pink-500/20 rounded-lg group-hover:bg-pink-500/30 transition">
+                  <HelpCircle className="w-6 h-6 text-pink-400" />
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-pink-400 transition" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Quản lý Quizzes
+              </h3>
+              <p className="text-slate-400 text-sm mb-4">
+                Tạo và quản lý các bài kiểm tra trong khóa học
+              </p>
+              <div className="flex items-center gap-2 text-pink-400 text-sm font-medium">
+                <span>Quản lý</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Additional Sections */}
+        <div className="mt-8 grid md:grid-cols-2 gap-6">
           <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6">
             <h3 className="text-lg font-semibold text-white mb-4">
               Student Analytics

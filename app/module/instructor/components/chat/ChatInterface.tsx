@@ -4,6 +4,7 @@ import MessageList from './MessageList'
 import MessageInput from './MessageInput'
 import NewConversationModal from './NewConversationModal'
 import { useConversations, useMessages, useChat, useActiveConversation } from '~/module/instructor/hooks/useChat'
+import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
 import type { ChatFilters, User } from '~/module/instructor/types/Chat'
 
 interface ChatInterfaceProps {
@@ -15,6 +16,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   instructorId, 
   className = '' 
 }) => {
+  const { confirm } = useConfirmDialog()
   const [filters, setFilters] = useState<ChatFilters>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
@@ -86,7 +88,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa tin nhắn này?')) {
+    const ok = await confirm('Bạn có chắc chắn muốn xóa tin nhắn này?')
+    if (ok) {
       await deleteMessage(messageId)
     }
   }

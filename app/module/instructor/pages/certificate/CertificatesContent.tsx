@@ -1,6 +1,7 @@
 import { Award, Calendar, CheckCircle, ChevronDown, Download, Eye, FileText, Plus, Search, X, Clock } from 'lucide-react'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
+import { useToast } from '~/shared/hooks/useToast'
+import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
 
 interface Certificate {
   id: string
@@ -23,6 +24,7 @@ interface CertificateTemplate {
 }
 
 const CertificatesContent = () => {
+  const { toast } = useToast()
   const [certificates, setCertificates] = useState<Certificate[]>([
     {
       id: '1',
@@ -109,8 +111,9 @@ const CertificatesContent = () => {
     setShowIssueModal(true)
   }
 
-  const handleRevoke = (id: string) => {
-    if (confirm('Are you sure you want to revoke this certificate?')) {
+  const handleRevoke = async (id: string) => {
+    const ok = await confirm('Are you sure you want to revoke this certificate?')
+    if (ok) {
       setCertificates((prev) =>
         prev.map((cert) => (cert.id === id ? { ...cert, status: 'revoked' as const } : cert))
       )

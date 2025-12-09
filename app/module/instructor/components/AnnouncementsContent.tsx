@@ -1,6 +1,7 @@
 import { Bell, Edit2, Plus, Send, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
+import { useToast } from '~/shared/hooks/useToast'
+import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
 
 interface Announcement {
   id: string
@@ -34,6 +35,7 @@ const AnnouncementsContent = () => {
     },
   ])
 
+  const { toast } = useToast()
   const [showModal, setShowModal] = useState(false)
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null)
   const [formData, setFormData] = useState({
@@ -68,8 +70,9 @@ const AnnouncementsContent = () => {
     setShowModal(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this announcement?')) {
+  const handleDelete = async (id: string) => {
+    const ok = await confirm('Are you sure you want to delete this announcement?')
+    if (ok) {
       setAnnouncements(prev => prev.filter(a => a.id !== id))
       toast.success('Announcement deleted successfully!')
     }

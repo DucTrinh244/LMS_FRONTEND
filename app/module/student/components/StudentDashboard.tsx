@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   Award,
   BookOpen,
   Heart,
@@ -13,7 +14,21 @@ import {
   User
 } from "lucide-react";
 import { useState, type JSX } from "react";
+import { useToast } from "~/shared/hooks/useToast";
+import { useNavigate } from "react-router";
+import { useAuth } from "~/context/authContext";
 import DashboardContent from "~/module/student/components/DashboardContent";
+import EnrolledCoursesContent from "../pages/EnrolledCoursesContent";
+import MessagesContent from "../pages/MessagesContent";
+import MyCertificatesContent from "../pages/MyCertificatesContent";
+import MyProfileContent from "../pages/MyProfileContent";
+import MyQuizAttemptsContent from "../pages/MyQuizAttemptsContent";
+import OrderHistoryContent from "../pages/OrderHistoryContent";
+import ReferralsContent from "../pages/ReferralsContent";
+import ReviewsContent from "../pages/ReviewsContent";
+import SettingsContent from "../pages/SettingsContent";
+import SupportTicketsContent from "../pages/SupportTicketsContent";
+import WishlistContent from "../pages/WishlistContent";
 
 // Define type for menu item labels
 type MenuItem =
@@ -31,90 +46,53 @@ type MenuItem =
   | 'Settings'
   | 'Logout';
 
-// Placeholder content components
-const MyProfileContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">My Profile</h2>
-    <p className="text-slate-300 text-base">Edit your personal information, update your bio, and manage your account settings here.</p>
-  </div>
-);
+const LogoutContent = () => {
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-const EnrolledCoursesContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">Enrolled Courses</h2>
-    <p className="text-slate-300 text-base">View and manage your enrolled courses here.</p>
-  </div>
-);
+  const handleLogout = () => {
+    logout();
+    toast.success('Đăng xuất thành công!');
+    navigate('/login');
+  };
 
-const MyCertificatesContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">My Certificates</h2>
-    <p className="text-slate-300 text-base">View and download your earned certificates here.</p>
-  </div>
-);
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-8 max-w-md w-full text-center">
+        <div className="flex justify-center mb-6">
+          <div className="p-4 bg-amber-500/20 rounded-full">
+            <AlertTriangle className="w-12 h-12 text-amber-400" />
+          </div>
+        </div>
 
-const WishlistContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">Wishlist</h2>
-    <p className="text-slate-300 text-base">Manage your wishlist of courses here.</p>
-  </div>
-);
+        <h2 className="text-2xl font-bold text-white mb-3">Xác nhận đăng xuất</h2>
+        <p className="text-slate-300 mb-2">
+          Bạn có chắc chắn muốn đăng xuất, <span className="font-semibold text-violet-400">{user?.fullName}</span>?
+        </p>
+        <p className="text-slate-400 text-sm mb-8">
+          Bạn sẽ cần đăng nhập lại để truy cập vào dashboard của học viên.
+        </p>
 
-const ReviewsContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">Reviews</h2>
-    <p className="text-slate-300 text-base">View and submit course reviews here.</p>
-  </div>
-);
-
-const MyQuizAttemptsContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">My Quiz Attempts</h2>
-    <p className="text-slate-300 text-base">Review your quiz attempts and scores here.</p>
-  </div>
-);
-
-const OrderHistoryContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">Order History</h2>
-    <p className="text-slate-300 text-base">View your purchase history and invoices here.</p>
-  </div>
-);
-
-const ReferralsContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">Referrals</h2>
-    <p className="text-slate-300 text-base">Manage your referrals and rewards here.</p>
-  </div>
-);
-
-const MessagesContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">Messages</h2>
-    <p className="text-slate-300 text-base">Communicate with instructors and view messages here.</p>
-  </div>
-);
-
-const SupportTicketsContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">Support Tickets</h2>
-    <p className="text-slate-300 text-base">Manage your support tickets here.</p>
-  </div>
-);
-
-const SettingsContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">Settings</h2>
-    <p className="text-slate-300 text-base">Configure your account settings and preferences here.</p>
-  </div>
-);
-
-const LogoutContent = () => (
-  <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-    <h2 className="text-lg font-bold text-white mb-4">Logout</h2>
-    <p className="text-slate-300 text-base">Click here to log out of your account.</p>
-  </div>
-);
+        <div className="flex gap-3">
+          <button
+            onClick={handleLogout}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition flex items-center justify-center gap-2"
+          >
+            <LogOut className="w-5 h-5" />
+            Có, đăng xuất
+          </button>
+          <button
+            onClick={() => window.history.back()}
+            className="flex-1 px-6 py-3 bg-slate-700 text-slate-300 rounded-lg font-medium hover:bg-slate-600 transition"
+          >
+            Hủy
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const StudentDashboard = () => {
   const [activeMenu, setActiveMenu] = useState<MenuItem>('Dashboard');
@@ -152,74 +130,71 @@ const StudentDashboard = () => {
 
   return (
 
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid lg:grid-cols-4 gap-6">
-            {/* Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-5 sticky top-24">
-                {/* Main Menu */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
-                    Main Menu
-                  </h3>
-                  <nav className="space-y-1">
-                    {menuItems.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setActiveMenu(item.label as MenuItem)}
-                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition text-base ${
-                          activeMenu === item.label
-                            ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold'
-                            : 'text-slate-300 hover:bg-slate-700 hover:text-violet-400'
-                        }`}
-                      >
-                        {item.icon}
-                        <span>{item.label}</span>
-                      </button>
-                    ))}
-                  </nav>
-                </div>
-
-                {/* Account Settings */}
-                <div>
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
-                    Account Settings
-                  </h3>
-                  <nav className="space-y-1">
-                    <button
-                      onClick={() => setActiveMenu('Settings')}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition text-base ${
-                        activeMenu === 'Settings'
-                          ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold'
-                          : 'text-slate-300 hover:bg-slate-700 hover:text-violet-400'
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="grid lg:grid-cols-4 gap-6">
+        {/* Sidebar */}
+        <div className="lg:col-span-1">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-5 sticky top-24">
+            {/* Main Menu */}
+            <div className="mb-6">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
+                Main Menu
+              </h3>
+              <nav className="space-y-1">
+                {menuItems.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveMenu(item.label as MenuItem)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition text-base ${activeMenu === item.label
+                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold'
+                      : 'text-slate-300 hover:bg-slate-700 hover:text-violet-400'
                       }`}
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span>Settings</span>
-                    </button>
-                    <button
-                      onClick={() => setActiveMenu('Logout')}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition text-base ${
-                        activeMenu === 'Logout'
-                          ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold'
-                          : 'text-slate-300 hover:bg-slate-700 hover:text-violet-400'
-                      }`}
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
-                    </button>
-                  </nav>
-                </div>
-              </div>
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </nav>
             </div>
 
-            {/* Main Content Area */}
-            <div className="lg:col-span-3">
-              {contentMap[activeMenu]}
+            {/* Account Settings */}
+            <div>
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">
+                Account Settings
+              </h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveMenu('Settings')}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition text-base ${activeMenu === 'Settings'
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold'
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-violet-400'
+                    }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </button>
+                <button
+                  onClick={() => setActiveMenu('Logout')}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition text-base ${activeMenu === 'Logout'
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold'
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-violet-400'
+                    }`}
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              </nav>
             </div>
           </div>
         </div>
-    
+
+        {/* Main Content Area */}
+        <div className="lg:col-span-3">
+          {contentMap[activeMenu]}
+        </div>
+      </div>
+    </div>
+
   );
 };
 

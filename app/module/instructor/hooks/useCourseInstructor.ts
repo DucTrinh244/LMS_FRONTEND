@@ -13,7 +13,7 @@ import { usePagination } from '~/shared/hooks/usePagination'
 const COURSE_INSTRUCTOR_QUERY_KEY = ['courses', 'instructor']
 
 // Mock data for development (when API is not available)
-const USE_MOCK_DATA = true
+const USE_MOCK_DATA = false
 
 const MOCK_COURSES: Course[] = [
   {
@@ -112,7 +112,19 @@ export function useCourseInstructor(instructorId?: string) {
       }
       try {
         const data = await courseInstructorService.getAllCoursesInstructor(instructorId)
-        return Array.isArray(data) ? data : data?.courses || []
+        const courses = Array.isArray(data) ? data : data?.courses || []
+        // Map API response to Course format
+        return courses.map((course: any) => ({
+          ...course,
+          status: course.status?.toLowerCase() || 'draft',
+          image: course.image || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=80',
+          price: course.price || 0,
+          rating: course.rating || 0,
+          reviews: course.reviews || 0,
+          students: course.students || 0,
+          lessons: course.lessons || 0,
+          quizzes: course.quizzes || 0,
+        }))
       } catch (error: any) {
         throw new Error(error?.message || 'Không thể tải khóa học')
       }

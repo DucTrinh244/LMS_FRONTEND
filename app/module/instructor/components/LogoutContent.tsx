@@ -1,11 +1,12 @@
 import { LogOut, AlertTriangle } from 'lucide-react'
 import { useAuth } from '~/context/authContext'
 import { useNavigate } from 'react-router'
-import toast from 'react-hot-toast'
+import { useToast } from '~/shared/hooks/useToast'
 
 const LogoutContent = () => {
   const { logout, user } = useAuth()
   const navigate = useNavigate()
+  const { toast } = useToast()
 
   const handleLogout = () => {
     logout()

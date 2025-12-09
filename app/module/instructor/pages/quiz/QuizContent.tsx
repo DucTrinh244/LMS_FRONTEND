@@ -1,6 +1,7 @@
 import { CheckCircle, ChevronDown, Clock, Edit2, Eye, HelpCircle, Plus, Search, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
+import { useToast } from '~/shared/hooks/useToast'
+import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
 
 interface Question {
   id: string
@@ -27,6 +28,8 @@ interface Quiz {
 }
 
 const QuizContent = () => {
+  const { toast } = useToast()
+  const { confirm } = useConfirmDialog()
   const [quizzes, setQuizzes] = useState<Quiz[]>([
     {
       id: '1',
@@ -132,8 +135,9 @@ const QuizContent = () => {
     setShowModal(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this quiz?')) {
+  const handleDelete = async (id: string) => {
+    const ok = await confirm('Are you sure you want to delete this quiz?')
+    if (ok) {
       setQuizzes((prev) => prev.filter((q) => q.id !== id))
       toast.success('Quiz deleted successfully!')
     }

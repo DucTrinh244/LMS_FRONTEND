@@ -1,10 +1,11 @@
 import { Camera, Mail, Phone, User } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '~/context/authContext'
-import toast from 'react-hot-toast'
+import { useToast } from '~/shared/hooks/useToast'
 
 const MyProfileContent = () => {
   const { user } = useAuth()
+  const { toast } = useToast()
 
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({

@@ -1,6 +1,7 @@
 import { CheckCircle, Clock, Edit2, FileText, Plus, Trash2, X, XCircle } from 'lucide-react'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
+import { useToast } from '~/shared/hooks/useToast'
+import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
 
 interface Assignment {
   id: string
@@ -25,6 +26,7 @@ interface Submission {
 }
 
 const AssignmentsContent = () => {
+  const { toast } = useToast()
   const [assignments, setAssignments] = useState<Assignment[]>([
     {
       id: '1',
@@ -99,8 +101,9 @@ const AssignmentsContent = () => {
     setShowModal(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this assignment?')) {
+  const handleDelete = async (id: string) => {
+    const ok = await confirm('Are you sure you want to delete this assignment?')
+    if (ok) {
       setAssignments(prev => prev.filter(a => a.id !== id))
       toast.success('Assignment deleted successfully!')
     }

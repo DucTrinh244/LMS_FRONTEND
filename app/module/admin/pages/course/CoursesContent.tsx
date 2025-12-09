@@ -4,6 +4,7 @@ import { useCourseAdmin } from '~/module/admin/hooks/useCourse';
 import { CourseDetailComponent } from '~/module/admin/pages/course/CourseDetail';
 import CourseEdit from '~/module/admin/pages/course/CourseEdit';
 import { CourseList } from '~/module/admin/pages/course/CourseList';
+import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog';
 import type { Course } from '~/module/admin/types/Course';
 
 
@@ -76,6 +77,7 @@ const initialCourses: Course[] = [
 
 // Component chính
 const CoursesContent: React.FC = () => {
+  const { confirm } = useConfirmDialog()
   const [courses, setCourses] = useState<Course[]>(initialCourses);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedCourseEdit, setSelectedCourseEdit] = useState<Course | null>(null);
@@ -108,16 +110,18 @@ const CoursesContent: React.FC = () => {
     setSelectedCourseEdit(null);
   };
 
-  const handleApprove = (id: string) => {
-    if (window.confirm('Phê duyệt khóa học này?')) {
+  const handleApprove = async (id: string) => {
+    const ok = await confirm('Phê duyệt khóa học này?')
+    if (ok) {
       setCourses(courses.map(course => 
         course.id === id ? { ...course, status: 'active' as const } : course
       ));
     }
   };
 
-  const handleReject = (id: string) => {
-    if (window.confirm('Từ chối khóa học này?')) {
+  const handleReject = async (id: string) => {
+    const ok = await confirm('Từ chối khóa học này?')
+    if (ok) {
       setCourses(courses.map(course => 
         course.id === id ? { ...course, status: 'rejected' as const } : course
       ));
@@ -134,8 +138,9 @@ const CoursesContent: React.FC = () => {
     }));
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
+  const handleDelete = async (id: string) => {
+    const ok = await confirm('Bạn có chắc chắn muốn xóa khóa học này?')
+    if (ok) {
       setCourses(courses.filter(course => course.id !== id));
     }
   };
