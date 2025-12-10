@@ -1,269 +1,349 @@
 import { CheckCircle, ChevronDown, Clock, Edit2, Eye, HelpCircle, Plus, Search, Trash2, X } from 'lucide-react'
-import { useState } from 'react'
-import { useToast } from '~/shared/hooks/useToast'
+import { useEffect, useState } from 'react'
+import { useCourseInstructor } from '~/module/instructor/hooks/useCourseInstructor'
+import { useQuizMutations, useQuizzes } from '~/module/instructor/hooks/useQuiz'
+import { courseInstructorService } from '~/module/instructor/services/CourseInstructorApi'
+import { quizService } from '~/module/instructor/services/QuizApi'
+import type { CreateQuizDto, CreateQuizQuestionDto, QuizDetailDto, QuizListDto, UpdateQuizDto } from '~/module/instructor/types/Quiz'
+import { QuestionType as QType } from '~/module/instructor/types/Quiz'
 import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
+import { useToast } from '~/shared/hooks/useToast'
 
-interface Question {
-  id: string
-  question: string
-  type: 'multiple-choice' | 'true-false' | 'short-answer'
-  options?: string[]
-  correctAnswer: string | number
-  points: number
+interface QuizContentProps {
+  courseId?: string
 }
 
-interface Quiz {
-  id: string
-  title: string
-  courseId: string
-  courseName: string
-  description: string
-  duration: number // in minutes
-  totalPoints: number
-  questions: Question[]
-  status: 'draft' | 'published' | 'archived'
-  attempts: number
-  passPercentage: number
-  createdAt: string
-}
-
-const QuizContent = () => {
+const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
   const { toast } = useToast()
   const { confirm } = useConfirmDialog()
-  const [quizzes, setQuizzes] = useState<Quiz[]>([
-    {
-      id: '1',
-      title: 'React Fundamentals - Chapter 1',
-      courseId: '1',
-      courseName: 'React Fundamentals',
-      description: 'Test your knowledge of React basics and JSX',
-      duration: 30,
-      totalPoints: 100,
-      questions: [
-        {
-          id: 'q1',
-          question: 'What is JSX?',
-          type: 'multiple-choice',
-          options: ['JavaScript XML', 'Java Syntax Extension', 'JSON XML', 'None of the above'],
-          correctAnswer: 0,
-          points: 10,
-        },
-        {
-          id: 'q2',
-          question: 'React is a library, not a framework.',
-          type: 'true-false',
-          options: ['True', 'False'],
-          correctAnswer: 0,
-          points: 10,
-        },
-      ],
-      status: 'published',
-      attempts: 45,
-      passPercentage: 70,
-      createdAt: '2025-01-10',
-    },
-    {
-      id: '2',
-      title: 'JavaScript ES6+ Quiz',
-      courseId: '2',
-      courseName: 'Advanced JavaScript',
-      description: 'Modern JavaScript features and syntax',
-      duration: 45,
-      totalPoints: 150,
-      questions: [],
-      status: 'draft',
-      attempts: 0,
-      passPercentage: 75,
-      createdAt: '2025-01-12',
-    },
-  ])
+  const { courses } = useCourseInstructor()
+  const { quizzes, loading: quizzesLoading, refetch: refetchQuizzes } = useQuizzes(courseId, false)
+  const { createQuiz, updateQuiz, deleteQuiz, publishQuiz, createQuestion, updateQuestion, deleteQuestion, isCreating, isUpdating, isDeleting } = useQuizMutations()
+
+  const [lessons, setLessons] = useState<any[]>([])
+  const [selectedQuizDetail, setSelectedQuizDetail] = useState<QuizDetailDto | null>(null)
+  const [quizzesList, setQuizzesList] = useState<QuizListDto[]>([])
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('All')
   const [showModal, setShowModal] = useState(false)
   const [showQuestionsModal, setShowQuestionsModal] = useState(false)
-  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null)
-  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null)
+  const [editingQuiz, setEditingQuiz] = useState<QuizListDto | null>(null)
+  const [selectedQuiz, setSelectedQuiz] = useState<QuizListDto | null>(null)
   const [formData, setFormData] = useState({
+    lessonId: '',
+    lessonTitle: '',
     title: '',
-    courseId: '',
-    courseName: '',
     description: '',
-    duration: 30,
-    passPercentage: 70,
-    status: 'draft' as 'draft' | 'published' | 'archived',
+    timeLimit: 30,
+    passingScore: 70,
+    maxAttempts: 3,
+    shuffleQuestions: false,
+    shuffleAnswers: false,
+    showCorrectAnswers: true,
+    sortOrder: 0,
   })
 
-  const [questionFormData, setQuestionFormData] = useState<Question>({
-    id: '',
-    question: '',
-    type: 'multiple-choice',
-    options: ['', '', '', ''],
-    correctAnswer: 0,
+  const [questionFormData, setQuestionFormData] = useState<CreateQuizQuestionDto>({
+    quizId: '',
+    questionText: '',
+    explanation: '',
+    type: QType.SingleChoice,
     points: 10,
+    sortOrder: 0,
+    answers: [],
   })
 
-  const filteredQuizzes = quizzes
+  const [answerOptions, setAnswerOptions] = useState<{ text: string; isCorrect: boolean }[]>([
+    { text: '', isCorrect: false },
+    { text: '', isCorrect: false },
+    { text: '', isCorrect: false },
+    { text: '', isCorrect: false },
+  ])
+
+  useEffect(() => {
+    if (quizzes && quizzes.length > 0) {
+      setQuizzesList(quizzes)
+    } else {
+      setQuizzesList([])
+    }
+  }, [quizzes])
+
+  useEffect(() => {
+    if (courseId) {
+      loadLessons()
+    }
+  }, [courseId])
+
+  const loadLessons = async () => {
+    try {
+      const data = await courseInstructorService.getLessonsByCourse(courseId || '')
+      const lessonsList = data?.isSuccess ? data.value : data?.lessons ?? data ?? []
+      setLessons(lessonsList)
+    } catch (error) {
+      setLessons([])
+    }
+  }
+
+  const filteredQuizzes = quizzesList
     .filter((quiz) => quiz.title.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter((quiz) => selectedStatus === 'All' || quiz.status === selectedStatus)
+    .filter((quiz) => {
+      if (selectedStatus === 'All') return true
+      if (selectedStatus === 'published') return quiz.isPublished
+      if (selectedStatus === 'draft') return !quiz.isPublished
+      return true
+    })
 
   const handleAdd = () => {
     setEditingQuiz(null)
     setFormData({
+      lessonId: '',
+      lessonTitle: '',
       title: '',
-      courseId: '',
-      courseName: '',
       description: '',
-      duration: 30,
-      passPercentage: 70,
-      status: 'draft',
+      timeLimit: 30,
+      passingScore: 70,
+      maxAttempts: 3,
+      shuffleQuestions: false,
+      shuffleAnswers: false,
+      showCorrectAnswers: true,
+      sortOrder: quizzesList.length + 1,
     })
     setShowModal(true)
   }
 
-  const handleEdit = (quiz: Quiz) => {
+  const handleEdit = async (quiz: QuizListDto) => {
     setEditingQuiz(quiz)
-    setFormData({
-      title: quiz.title,
-      courseId: quiz.courseId,
-      courseName: quiz.courseName,
-      description: quiz.description,
-      duration: quiz.duration,
-      passPercentage: quiz.passPercentage,
-      status: quiz.status,
-    })
+    try {
+      const res = await quizService.getQuizDetail(quiz.id)
+      if (res.isSuccess && res.value) {
+        const detail = res.value
+        setFormData({
+          lessonId: detail.lessonId,
+          lessonTitle: detail.lessonTitle,
+          title: detail.title,
+          description: detail.description || '',
+          timeLimit: detail.timeLimit,
+          passingScore: detail.passingScore,
+          maxAttempts: detail.maxAttempts,
+          shuffleQuestions: detail.shuffleQuestions,
+          shuffleAnswers: detail.shuffleAnswers,
+          showCorrectAnswers: detail.showCorrectAnswers,
+          sortOrder: detail.sortOrder,
+        })
+        setSelectedQuizDetail(detail)
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Không thể tải chi tiết quiz')
+    }
     setShowModal(true)
   }
 
   const handleDelete = async (id: string) => {
-    const ok = await confirm('Are you sure you want to delete this quiz?')
+    const ok = await confirm('Bạn có chắc chắn muốn xóa quiz này?')
     if (ok) {
-      setQuizzes((prev) => prev.filter((q) => q.id !== id))
-      toast.success('Quiz deleted successfully!')
+      try {
+        await deleteQuiz(id)
+        setQuizzesList((prev) => prev.filter((q) => q.id !== id))
+      } catch (error: any) {
+        toast.error(error?.message || 'Không thể xóa quiz')
+      }
     }
   }
 
-  const handleSaveQuiz = (e: React.FormEvent) => {
+  const handleSaveQuiz = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (editingQuiz) {
-      setQuizzes((prev) =>
+    try {
+      if (editingQuiz) {
+        const updateData: UpdateQuizDto = {
+          id: editingQuiz.id,
+          title: formData.title,
+          description: formData.description || null,
+          timeLimit: formData.timeLimit,
+          passingScore: formData.passingScore,
+          maxAttempts: formData.maxAttempts,
+          shuffleQuestions: formData.shuffleQuestions,
+          shuffleAnswers: formData.shuffleAnswers,
+          showCorrectAnswers: formData.showCorrectAnswers,
+          sortOrder: formData.sortOrder,
+        }
+        await updateQuiz({ id: editingQuiz.id, data: updateData })
+      } else {
+        if (!formData.lessonId) {
+          toast.error('Vui lòng chọn lesson')
+          return
+        }
+        const createData: CreateQuizDto = {
+          lessonId: formData.lessonId,
+          title: formData.title,
+          description: formData.description || null,
+          timeLimit: formData.timeLimit,
+          passingScore: formData.passingScore,
+          maxAttempts: formData.maxAttempts,
+          shuffleQuestions: formData.shuffleQuestions,
+          shuffleAnswers: formData.shuffleAnswers,
+          showCorrectAnswers: formData.showCorrectAnswers,
+          sortOrder: formData.sortOrder,
+        }
+        await createQuiz(createData)
+      }
+      setShowModal(false)
+      await refetchQuizzes()
+    } catch (error: any) {
+      toast.error(error?.message || 'Có lỗi xảy ra')
+    }
+  }
+
+  const handleManageQuestions = async (quiz: QuizListDto) => {
+    setSelectedQuiz(quiz)
+    try {
+      const res = await quizService.getQuizDetail(quiz.id)
+      if (res.isSuccess && res.value) {
+        setSelectedQuizDetail(res.value)
+        setShowQuestionsModal(true)
+      } else {
+        toast.error(res.error?.message || 'Không thể tải chi tiết quiz')
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Có lỗi xảy ra')
+    }
+  }
+
+  const handleAddQuestion = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!selectedQuiz) return
+
+    try {
+      // Prepare answers based on question type
+      const answers: any[] = []
+
+      if (questionFormData.type === QType.ShortAnswer || questionFormData.type === QType.Essay) {
+        // For text questions, create a single answer with the correct text
+        if (answerOptions[0]?.text) {
+          answers.push({
+            answerText: answerOptions[0].text,
+            isCorrect: true,
+            sortOrder: 0,
+          })
+        }
+      } else {
+        // For choice questions, use all answer options
+        answerOptions.forEach((option, index) => {
+          if (option.text.trim()) {
+            answers.push({
+              answerText: option.text,
+              isCorrect: option.isCorrect,
+              sortOrder: index,
+            })
+          }
+        })
+      }
+
+      if (answers.length === 0) {
+        toast.error('Vui lòng thêm ít nhất một đáp án')
+        return
+      }
+
+      const questionData: CreateQuizQuestionDto = {
+        quizId: selectedQuiz.id,
+        questionText: questionFormData.questionText,
+        explanation: questionFormData.explanation || null,
+        type: questionFormData.type || QType.SingleChoice,
+        points: questionFormData.points || 10,
+        sortOrder: questionFormData.sortOrder || (selectedQuizDetail?.questions.length || 0) + 1,
+        imageUrl: null,
+        answers: answers,
+      }
+
+      await createQuestion(questionData)
+
+      // Refresh quiz detail
+      const res = await quizService.getQuizDetail(selectedQuiz.id)
+      if (res.isSuccess && res.value) {
+        setSelectedQuizDetail(res.value)
+        // Update selectedQuiz to reflect new question count
+        setSelectedQuiz((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            questionCount: res.value?.questions.length || 0,
+            totalPoints: res.value?.questions.reduce((sum: number, q: any) => sum + q.points, 0) || 0,
+          }
+        })
+      }
+
+      // Reset form
+      setQuestionFormData({
+        quizId: selectedQuiz.id,
+        questionText: '',
+        explanation: '',
+        type: QType.SingleChoice,
+        points: 10,
+        sortOrder: 0,
+        answers: [],
+      })
+      setAnswerOptions([
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+      ])
+    } catch (error: any) {
+      toast.error(error?.message || 'Có lỗi xảy ra khi thêm câu hỏi')
+    }
+  }
+
+  const handleDeleteQuestion = async (questionId: string) => {
+    if (!selectedQuiz) return
+
+    const ok = await confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')
+    if (!ok) return
+
+    try {
+      await deleteQuestion(questionId)
+
+      // Refresh quiz detail
+      const res = await quizService.getQuizDetail(selectedQuiz.id)
+      if (res.isSuccess && res.value) {
+        setSelectedQuizDetail(res.value)
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Có lỗi xảy ra khi xóa câu hỏi')
+    }
+  }
+
+  const getStatusColor = (isPublished: boolean) => {
+    if (isPublished) {
+      return 'bg-green-500/20 text-green-300 border-green-500/50'
+    }
+    return 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+  }
+
+  const handlePublishToggle = async (quiz: QuizListDto) => {
+    try {
+      await publishQuiz({ id: quiz.id, isPublished: !quiz.isPublished })
+      setQuizzesList((prev) =>
         prev.map((q) =>
-          q.id === editingQuiz.id
-            ? {
-                ...q,
-                ...formData,
-                totalPoints: q.questions.reduce((sum, question) => sum + question.points, 0),
-              }
-            : q
+          q.id === quiz.id ? { ...q, isPublished: !q.isPublished } : q
         )
       )
-      toast.success('Quiz updated successfully!')
-    } else {
-      const newQuiz: Quiz = {
-        id: Date.now().toString(),
-        ...formData,
-        questions: [],
-        totalPoints: 0,
-        attempts: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-      }
-      setQuizzes((prev) => [newQuiz, ...prev])
-      toast.success('Quiz created successfully!')
+    } catch (error: any) {
+      toast.error(error?.message || 'Có lỗi xảy ra')
     }
-
-    setShowModal(false)
   }
 
-  const handleManageQuestions = (quiz: Quiz) => {
-    setSelectedQuiz(quiz)
-    setShowQuestionsModal(true)
-  }
-
-  const handleAddQuestion = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!selectedQuiz) return
-
-    const newQuestion: Question = {
-      ...questionFormData,
-      id: Date.now().toString(),
-    }
-
-    setQuizzes((prev) =>
-      prev.map((q) =>
-        q.id === selectedQuiz.id
-          ? {
-              ...q,
-              questions: [...q.questions, newQuestion],
-              totalPoints: q.totalPoints + newQuestion.points,
-            }
-          : q
-      )
+  if (quizzesLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center text-white py-12">
+            <p>Đang tải quizzes...</p>
+          </div>
+        </div>
+      </div>
     )
-
-    setSelectedQuiz((prev) => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        questions: [...prev.questions, newQuestion],
-        totalPoints: prev.totalPoints + newQuestion.points,
-      }
-    })
-
-    setQuestionFormData({
-      id: '',
-      question: '',
-      type: 'multiple-choice',
-      options: ['', '', '', ''],
-      correctAnswer: 0,
-      points: 10,
-    })
-
-    toast.success('Question added successfully!')
-  }
-
-  const handleDeleteQuestion = (questionId: string) => {
-    if (!selectedQuiz) return
-
-    const question = selectedQuiz.questions.find((q) => q.id === questionId)
-    if (!question) return
-
-    setQuizzes((prev) =>
-      prev.map((q) =>
-        q.id === selectedQuiz.id
-          ? {
-              ...q,
-              questions: q.questions.filter((ques) => ques.id !== questionId),
-              totalPoints: q.totalPoints - question.points,
-            }
-          : q
-      )
-    )
-
-    setSelectedQuiz((prev) => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        questions: prev.questions.filter((ques) => ques.id !== questionId),
-        totalPoints: prev.totalPoints - question.points,
-      }
-    })
-
-    toast.success('Question deleted successfully!')
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'published':
-        return 'bg-green-500/20 text-green-300 border-green-500/50'
-      case 'draft':
-        return 'bg-amber-500/20 text-amber-300 border-amber-500/50'
-      case 'archived':
-        return 'bg-slate-500/20 text-slate-300 border-slate-500/50'
-      default:
-        return 'bg-slate-500/20 text-slate-300 border-slate-500/50'
-    }
   }
 
   return (
@@ -282,21 +362,21 @@ const QuizContent = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 opacity-80" />
             <div className="relative p-6 text-white">
               <h3 className="text-sm font-semibold text-slate-200 mb-2">Published</h3>
-              <p className="text-3xl font-bold">{quizzes.filter((q) => q.status === 'published').length}</p>
+              <p className="text-3xl font-bold">{quizzesList.filter((q) => q.isPublished).length}</p>
             </div>
           </div>
           <div className="relative group overflow-hidden rounded-2xl shadow-md transition-all hover:scale-105">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 opacity-80" />
             <div className="relative p-6 text-white">
               <h3 className="text-sm font-semibold text-slate-200 mb-2">Draft</h3>
-              <p className="text-3xl font-bold">{quizzes.filter((q) => q.status === 'draft').length}</p>
+              <p className="text-3xl font-bold">{quizzesList.filter((q) => !q.isPublished).length}</p>
             </div>
           </div>
           <div className="relative group overflow-hidden rounded-2xl shadow-md transition-all hover:scale-105">
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 opacity-80" />
             <div className="relative p-6 text-white">
               <h3 className="text-sm font-semibold text-slate-200 mb-2">Total Attempts</h3>
-              <p className="text-3xl font-bold">{quizzes.reduce((sum, q) => sum + q.attempts, 0)}</p>
+              <p className="text-3xl font-bold">{quizzesList.reduce((sum, q) => sum + q.totalAttempts, 0)}</p>
             </div>
           </div>
         </div>
@@ -374,27 +454,39 @@ const QuizContent = () => {
                       <h3 className="text-lg font-semibold text-white">{quiz.title}</h3>
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                          quiz.status
+                          quiz.isPublished
                         )}`}
                       >
-                        {quiz.status.toUpperCase()}
+                        {quiz.isPublished ? 'PUBLISHED' : 'DRAFT'}
                       </span>
                     </div>
-                    <p className="text-slate-300 mb-3">{quiz.description}</p>
+                    <p className="text-slate-300 mb-3">{quiz.description || 'Không có mô tả'}</p>
                     <div className="flex items-center gap-4 text-sm">
-                      <span className="text-violet-400 font-medium">{quiz.courseName}</span>
+                      <span className="text-violet-400 font-medium">{quiz.courseTitle}</span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-slate-400">{quiz.lessonTitle}</span>
                       <span className="text-slate-400">•</span>
                       <span className="text-slate-400 flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        {quiz.duration} mins
+                        {quiz.timeLimit} phút
                       </span>
                       <span className="text-slate-400">•</span>
-                      <span className="text-slate-400">{quiz.questions.length} Questions</span>
+                      <span className="text-slate-400">{quiz.questionCount} câu hỏi</span>
                       <span className="text-slate-400">•</span>
-                      <span className="text-slate-400">{quiz.totalPoints} Points</span>
+                      <span className="text-slate-400">{quiz.totalPoints} điểm</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => handlePublishToggle(quiz)}
+                      className={`p-2 rounded-lg transition ${quiz.isPublished
+                        ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400'
+                        : 'bg-green-500/10 hover:bg-green-500/20 text-green-400'
+                        }`}
+                      title={quiz.isPublished ? 'Hủy xuất bản' : 'Xuất bản'}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleEdit(quiz)}
                       className="p-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg transition text-slate-300 hover:text-white"
@@ -413,12 +505,12 @@ const QuizContent = () => {
                 <div className="flex items-center justify-between pt-4 border-t border-slate-700">
                   <div className="flex gap-6">
                     <div>
-                      <p className="text-2xl font-bold text-white">{quiz.attempts}</p>
+                      <p className="text-2xl font-bold text-white">{quiz.totalAttempts}</p>
                       <p className="text-sm text-slate-400">Attempts</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-white">{quiz.passPercentage}%</p>
-                      <p className="text-sm text-slate-400">Pass Rate</p>
+                      <p className="text-2xl font-bold text-white">{quiz.passingScore}%</p>
+                      <p className="text-sm text-slate-400">Passing Score</p>
                     </div>
                   </div>
                   <button
@@ -426,7 +518,7 @@ const QuizContent = () => {
                     className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition flex items-center gap-2"
                   >
                     <HelpCircle className="w-4 h-4" />
-                    Manage Questions ({quiz.questions.length})
+                    Quản lý Câu hỏi ({quiz.questionCount})
                   </button>
                 </div>
               </div>
@@ -479,50 +571,42 @@ const QuizContent = () => {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Lesson <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={formData.lessonId}
+                    onChange={(e) => {
+                      const selectedLesson = lessons.find((l) => l.id === e.target.value)
+                      setFormData((prev) => ({
+                        ...prev,
+                        lessonId: e.target.value,
+                        lessonTitle: selectedLesson?.title || '',
+                      }))
+                    }}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    required
+                    disabled={!!editingQuiz}
+                  >
+                    <option value="">Chọn lesson</option>
+                    {lessons.map((lesson) => (
+                      <option key={lesson.id} value={lesson.id}>
+                        {lesson.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Course <span className="text-red-400">*</span>
-                    </label>
-                    <select
-                      value={formData.courseId}
-                      onChange={(e) => {
-                        const courseName = e.target.options[e.target.selectedIndex].text
-                        setFormData((prev) => ({ ...prev, courseId: e.target.value, courseName }))
-                      }}
-                      className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                      required
-                    >
-                      <option value="">Select course</option>
-                      <option value="1">React Fundamentals</option>
-                      <option value="2">Advanced JavaScript</option>
-                      <option value="3">Node.js Backend</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Status</label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, status: e.target.value as any }))
-                      }
-                      className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="published">Published</option>
-                      <option value="archived">Archived</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Duration (minutes)
+                      Thời gian (phút)
                     </label>
                     <input
                       type="number"
-                      value={formData.duration}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, duration: Number(e.target.value) }))}
+                      value={formData.timeLimit}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, timeLimit: Number(e.target.value) }))}
                       min="1"
                       className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                     />
@@ -530,19 +614,81 @@ const QuizContent = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Pass Percentage
+                      Điểm đạt (%)
                     </label>
                     <input
                       type="number"
-                      value={formData.passPercentage}
+                      value={formData.passingScore}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, passPercentage: Number(e.target.value) }))
+                        setFormData((prev) => ({ ...prev, passingScore: Number(e.target.value) }))
                       }
                       min="0"
                       max="100"
                       className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Số lần làm tối đa
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.maxAttempts}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, maxAttempts: Number(e.target.value) }))}
+                      min="1"
+                      className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Thứ tự
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.sortOrder}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, sortOrder: Number(e.target.value) }))}
+                      min="0"
+                      className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.shuffleQuestions}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, shuffleQuestions: e.target.checked }))
+                      }
+                      className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-slate-300">Xáo trộn câu hỏi</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.shuffleAnswers}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, shuffleAnswers: e.target.checked }))
+                      }
+                      className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-slate-300">Xáo trộn đáp án</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.showCorrectAnswers}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, showCorrectAnswers: e.target.checked }))
+                      }
+                      className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-violet-600 focus:ring-violet-500"
+                    />
+                    <span className="text-slate-300">Hiển thị đáp án đúng sau khi nộp bài</span>
+                  </label>
                 </div>
 
                 <div className="flex gap-3 pt-4">
@@ -573,7 +719,7 @@ const QuizContent = () => {
                 <div>
                   <h3 className="text-xl font-bold text-white">{selectedQuiz.title}</h3>
                   <p className="text-slate-400 text-sm">
-                    {selectedQuiz.questions.length} Questions • {selectedQuiz.totalPoints} Points
+                    {selectedQuizDetail?.questions.length || 0} Questions • {selectedQuizDetail?.totalPoints || selectedQuiz.totalPoints} Points
                   </p>
                 </div>
                 <button
@@ -592,40 +738,58 @@ const QuizContent = () => {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-2">Question</label>
-                      <input
-                        type="text"
-                        value={questionFormData.question}
+                      <textarea
+                        value={questionFormData.questionText}
                         onChange={(e) =>
-                          setQuestionFormData((prev) => ({ ...prev, question: e.target.value }))
+                          setQuestionFormData((prev) => ({ ...prev, questionText: e.target.value }))
                         }
-                        placeholder="Enter your question..."
-                        className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        rows={3}
+                        placeholder="Nhập câu hỏi..."
+                        className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
                         required
                       />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Type</label>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">Loại câu hỏi</label>
                         <select
                           value={questionFormData.type}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const newType = Number(e.target.value) as QType
                             setQuestionFormData((prev) => ({
                               ...prev,
-                              type: e.target.value as any,
-                              options: e.target.value === 'true-false' ? ['True', 'False'] : ['', '', '', ''],
+                              type: newType,
                             }))
-                          }
+                            // Reset answers based on type
+                            if (newType === QType.TrueFalse) {
+                              setAnswerOptions([
+                                { text: 'True', isCorrect: false },
+                                { text: 'False', isCorrect: false },
+                              ])
+                            } else if (newType === QType.ShortAnswer || newType === QType.Essay) {
+                              setAnswerOptions([{ text: '', isCorrect: true }])
+                            } else {
+                              setAnswerOptions([
+                                { text: '', isCorrect: false },
+                                { text: '', isCorrect: false },
+                                { text: '', isCorrect: false },
+                                { text: '', isCorrect: false },
+                              ])
+                            }
+                          }}
                           className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                         >
-                          <option value="multiple-choice">Multiple Choice</option>
-                          <option value="true-false">True/False</option>
-                          <option value="short-answer">Short Answer</option>
+                          <option value={QType.SingleChoice}>Single Choice</option>
+                          <option value={QType.MultipleChoice}>Multiple Choice</option>
+                          <option value={QType.TrueFalse}>True/False</option>
+                          <option value={QType.ShortAnswer}>Short Answer</option>
+                          <option value={QType.Essay}>Essay</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Points</label>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">Điểm</label>
                         <input
                           type="number"
                           value={questionFormData.points}
@@ -636,60 +800,105 @@ const QuizContent = () => {
                           className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                         />
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Correct Answer</label>
-                        {questionFormData.type === 'short-answer' ? (
-                          <input
-                            type="text"
-                            value={questionFormData.correctAnswer}
-                            onChange={(e) =>
-                              setQuestionFormData((prev) => ({ ...prev, correctAnswer: e.target.value }))
-                            }
-                            placeholder="Answer"
-                            className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                          />
-                        ) : (
-                          <select
-                            value={questionFormData.correctAnswer}
-                            onChange={(e) =>
-                              setQuestionFormData((prev) => ({ ...prev, correctAnswer: Number(e.target.value) }))
-                            }
-                            className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                          >
-                            {questionFormData.options?.map((_, index) => (
-                              <option key={index} value={index}>
-                                Option {index + 1}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
                     </div>
 
-                    {questionFormData.type !== 'short-answer' && (
-                      <div className="grid grid-cols-2 gap-3">
-                        {questionFormData.options?.map((option, index) => (
-                          <div key={index}>
-                            <label className="block text-sm font-medium text-slate-300 mb-2">
-                              Option {index + 1}
-                            </label>
-                            <input
-                              type="text"
-                              value={option}
-                              onChange={(e) => {
-                                const newOptions = [...(questionFormData.options || [])]
-                                newOptions[index] = e.target.value
-                                setQuestionFormData((prev) => ({ ...prev, options: newOptions }))
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Giải thích (tùy chọn)</label>
+                      <textarea
+                        value={questionFormData.explanation || ''}
+                        onChange={(e) =>
+                          setQuestionFormData((prev) => ({ ...prev, explanation: e.target.value }))
+                        }
+                        rows={2}
+                        placeholder="Giải thích đáp án đúng..."
+                        className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                      />
+                    </div>
+
+                    {/* Answer Options */}
+                    {(questionFormData.type === QType.SingleChoice ||
+                      questionFormData.type === QType.MultipleChoice ||
+                      questionFormData.type === QType.TrueFalse) && (
+                        <div className="space-y-3">
+                          <label className="block text-sm font-medium text-slate-300 mb-2">
+                            Đáp án <span className="text-red-400">*</span>
+                          </label>
+                          {answerOptions.map((option, index) => (
+                            <div key={index} className="flex items-center gap-3">
+                              <input
+                                type={questionFormData.type === QType.MultipleChoice ? 'checkbox' : 'radio'}
+                                name="correctAnswer"
+                                checked={option.isCorrect}
+                                onChange={(e) => {
+                                  const newOptions = [...answerOptions]
+                                  if (questionFormData.type === QType.MultipleChoice) {
+                                    newOptions[index].isCorrect = e.target.checked
+                                  } else {
+                                    // Single choice or True/False - only one correct
+                                    newOptions.forEach((opt, i) => {
+                                      opt.isCorrect = i === index
+                                    })
+                                  }
+                                  setAnswerOptions(newOptions)
+                                }}
+                                className="w-5 h-5 text-violet-600"
+                              />
+                              <input
+                                type="text"
+                                value={option.text}
+                                onChange={(e) => {
+                                  const newOptions = [...answerOptions]
+                                  newOptions[index].text = e.target.value
+                                  setAnswerOptions(newOptions)
+                                }}
+                                placeholder={`Đáp án ${index + 1}`}
+                                disabled={questionFormData.type === QType.TrueFalse}
+                                className="flex-1 px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
+                              />
+                              {answerOptions.length > 2 && questionFormData.type !== QType.TrueFalse && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAnswerOptions(answerOptions.filter((_, i) => i !== index))
+                                  }}
+                                  className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {questionFormData.type !== QType.TrueFalse && answerOptions.length < 6 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAnswerOptions([...answerOptions, { text: '', isCorrect: false }])
                               }}
-                              placeholder={`Option ${index + 1}`}
-                              className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                              disabled={questionFormData.type === 'true-false'}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                              className="text-violet-400 hover:text-violet-300 text-sm font-medium"
+                            >
+                              + Thêm đáp án
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                    {(questionFormData.type === QType.ShortAnswer ||
+                      questionFormData.type === QType.Essay) && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-2">
+                            Đáp án mẫu (tùy chọn)
+                          </label>
+                          <input
+                            type="text"
+                            value={answerOptions[0]?.text || ''}
+                            onChange={(e) => {
+                              setAnswerOptions([{ text: e.target.value, isCorrect: true }])
+                            }}
+                            placeholder="Đáp án mẫu..."
+                            className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                          />
+                        </div>
+                      )}
 
                     <button
                       type="submit"
@@ -703,10 +912,12 @@ const QuizContent = () => {
                 {/* Questions List */}
                 <div className="space-y-3">
                   <h4 className="text-lg font-semibold text-white mb-4">Questions</h4>
-                  {selectedQuiz.questions.length === 0 ? (
-                    <p className="text-slate-400 text-center py-8">No questions yet. Add your first question above.</p>
+                  {!selectedQuizDetail || selectedQuizDetail.questions.length === 0 ? (
+                    <p className="text-slate-400 text-center py-8">
+                      Chưa có câu hỏi nào. Thêm câu hỏi đầu tiên ở trên.
+                    </p>
                   ) : (
-                    selectedQuiz.questions.map((question, index) => (
+                    selectedQuizDetail.questions.map((question, index) => (
                       <div
                         key={question.id}
                         className="bg-slate-700/30 rounded-lg p-4 hover:bg-slate-700/50 transition"
@@ -717,13 +928,24 @@ const QuizContent = () => {
                               <span className="bg-violet-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
                                 {index + 1}
                               </span>
-                              <h5 className="text-white font-medium">{question.question}</h5>
+                              <h5 className="text-white font-medium">{question.questionText}</h5>
                             </div>
                             <div className="flex items-center gap-4 text-sm text-slate-400 ml-11">
-                              <span className="capitalize">{question.type.replace('-', ' ')}</span>
+                              <span className="capitalize">
+                                {question.type === QType.SingleChoice && 'Single Choice'}
+                                {question.type === QType.MultipleChoice && 'Multiple Choice'}
+                                {question.type === QType.TrueFalse && 'True/False'}
+                                {question.type === QType.ShortAnswer && 'Short Answer'}
+                                {question.type === QType.Essay && 'Essay'}
+                              </span>
                               <span>•</span>
-                              <span>{question.points} points</span>
+                              <span>{question.points} điểm</span>
                             </div>
+                            {question.explanation && (
+                              <p className="text-slate-400 text-sm ml-11 mt-2 italic">
+                                Giải thích: {question.explanation}
+                              </p>
+                            )}
                           </div>
                           <button
                             onClick={() => handleDeleteQuestion(question.id)}
@@ -732,21 +954,20 @@ const QuizContent = () => {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        {question.options && (
+                        {question.answers && question.answers.length > 0 && (
                           <div className="ml-11 grid grid-cols-2 gap-2">
-                            {question.options.map((option, optIndex) => (
+                            {question.answers.map((answer, optIndex) => (
                               <div
-                                key={optIndex}
-                                className={`px-3 py-2 rounded text-sm ${
-                                  optIndex === question.correctAnswer
-                                    ? 'bg-green-500/20 text-green-300 border border-green-500/50'
-                                    : 'bg-slate-600/30 text-slate-400'
-                                }`}
+                                key={answer.id}
+                                className={`px-3 py-2 rounded text-sm ${answer.isCorrect
+                                  ? 'bg-green-500/20 text-green-300 border border-green-500/50'
+                                  : 'bg-slate-600/30 text-slate-400'
+                                  }`}
                               >
-                                {optIndex === question.correctAnswer && (
+                                {answer.isCorrect && (
                                   <CheckCircle className="w-3 h-3 inline mr-1" />
                                 )}
-                                {option}
+                                {answer.answerText}
                               </div>
                             ))}
                           </div>

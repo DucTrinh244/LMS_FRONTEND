@@ -56,46 +56,79 @@ export const courseInstructorService = {
 
   // Chapter Management
   getChaptersByCourse: (courseId: string): Promise<any> => {
-    return httpClient.get(`/course/${courseId}/chapters`).then((res) => res.data)
+    return httpClient.get(`/chapter?courseId=${courseId}`).then((res) => res.data)
   },
-  createChapter: (courseId: string, data: { title: string; description: string; sortOrder: number }): Promise<any> => {
+  getChapter: (chapterId: string): Promise<any> => {
+    return httpClient.get(`/chapter/${chapterId}`).then((res) => res.data)
+  },
+  createChapter: (courseId: string, data: { title: string; description: string; sortOrder: number; isPublished?: boolean }): Promise<any> => {
     const requestBody = {
       courseId,
       title: data.title,
-      description: data.description,
+      description: data.description || null,
       sortOrder: data.sortOrder,
+      isPublished: data.isPublished || false,
     }
-    return httpClient.post(`/course/${courseId}/chapters`, requestBody).then((res) => res.data)
+    return httpClient.post('/chapter', requestBody).then((res) => res.data)
   },
-  updateChapter: (courseId: string, chapterId: string, data: { id: string; title: string; description: string; sortOrder: number; isPublished: boolean }): Promise<any> => {
+  updateChapter: (chapterId: string, data: { id: string; title: string; description: string; sortOrder: number; isPublished: boolean }): Promise<any> => {
     const requestBody = {
-      id: chapterId,
+      id: chapterId, // Must match URL parameter
       title: data.title,
-      description: data.description,
+      description: data.description || null,
       sortOrder: data.sortOrder,
       isPublished: data.isPublished,
     }
-    return httpClient.put(`/course/${courseId}/chapters/${chapterId}`, requestBody).then((res) => res.data)
+    return httpClient.put(`/chapter/${chapterId}`, requestBody).then((res) => res.data)
   },
-  deleteChapter: (courseId: string, chapterId: string): Promise<any> => {
-    return httpClient.delete(`/course/${courseId}/chapters/${chapterId}`).then((res) => res.data)
+  deleteChapter: (chapterId: string): Promise<any> => {
+    return httpClient.delete(`/chapter/${chapterId}`).then((res) => res.data)
   },
 
   // Lesson Management
   getLessonsByCourse: (courseId: string): Promise<any> => {
-    return httpClient.get(`/courses/${courseId}/lessons`).then((res) => res.data)
+    return httpClient.get(`/lesson?courseId=${courseId}`).then((res) => res.data)
   },
-  getLessonsByChapter: (courseId: string, chapterId: string): Promise<any> => {
-    return httpClient.get(`/courses/${courseId}/chapters/${chapterId}/lessons`).then((res) => res.data)
+  getLessonsByChapter: (chapterId: string): Promise<any> => {
+    return httpClient.get(`/lesson?chapterId=${chapterId}`).then((res) => res.data)
   },
-  createLesson: (courseId: string, data: any): Promise<any> => {
-    return httpClient.post(`/courses/${courseId}/lessons`, data).then((res) => res.data)
+  getLesson: (lessonId: string): Promise<any> => {
+    return httpClient.get(`/lesson/${lessonId}`).then((res) => res.data)
   },
-  updateLesson: (courseId: string, lessonId: string, data: any): Promise<any> => {
-    return httpClient.put(`/courses/${courseId}/lessons/${lessonId}`, data).then((res) => res.data)
+  getLessonDetail: (lessonId: string): Promise<any> => {
+    return httpClient.get(`/lesson/${lessonId}/detail`).then((res) => res.data)
   },
-  deleteLesson: (courseId: string, lessonId: string): Promise<any> => {
-    return httpClient.delete(`/courses/${courseId}/lessons/${lessonId}`).then((res) => res.data)
+  createLesson: (data: { chapterId: string; title: string; content?: string; videoUrl?: string; videoDuration?: number; type?: number; sortOrder?: number; isPreview?: boolean; resources?: string }): Promise<any> => {
+    const requestBody = {
+      chapterId: data.chapterId,
+      title: data.title,
+      content: data.content ?? null,
+      videoUrl: data.videoUrl ?? null,
+      videoDuration: data.videoDuration ?? 0,
+      type: data.type ?? 1, // 1=Video, 2=Text, 3=Document
+      sortOrder: data.sortOrder ?? 0,
+      isPreview: data.isPreview ?? true,
+      resources: data.resources ?? null,
+    }
+    return httpClient.post('/lesson', requestBody).then((res) => res.data)
+  },
+  updateLesson: (lessonId: string, data: { id: string; title: string; content?: string; videoUrl?: string; videoDuration?: number; type?: number; sortOrder?: number; isPublished?: boolean; isPreview?: boolean; resources?: string }): Promise<any> => {
+    const requestBody = {
+      id: lessonId, // Must match URL parameter
+      title: data.title,
+      content: data.content || null,
+      videoUrl: data.videoUrl || null,
+      videoDuration: data.videoDuration || 0,
+      type: data.type || 1,
+      sortOrder: data.sortOrder || 0,
+      isPublished: data.isPublished || false,
+      isPreview: data.isPreview || false,
+      resources: data.resources || null,
+    }
+    return httpClient.put(`/lesson/${lessonId}`, requestBody).then((res) => res.data)
+  },
+  deleteLesson: (lessonId: string): Promise<any> => {
+    return httpClient.delete(`/lesson/${lessonId}`).then((res) => res.data)
   },
 
   // Quiz Management

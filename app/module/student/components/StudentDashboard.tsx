@@ -23,6 +23,7 @@ import MessagesContent from "../pages/MessagesContent";
 import MyCertificatesContent from "../pages/MyCertificatesContent";
 import MyProfileContent from "../pages/MyProfileContent";
 import MyQuizAttemptsContent from "../pages/MyQuizAttemptsContent";
+import QuizListContent from "../pages/QuizListContent";
 import OrderHistoryContent from "../pages/OrderHistoryContent";
 import ReferralsContent from "../pages/ReferralsContent";
 import ReviewsContent from "../pages/ReviewsContent";
@@ -38,6 +39,7 @@ type MenuItem =
   | 'My Certificates'
   | 'Wishlist'
   | 'Reviews'
+  | 'Quizzes'
   | 'My Quiz Attempts'
   | 'Order History'
   | 'Referrals'
@@ -104,6 +106,7 @@ const StudentDashboard = () => {
     { icon: <Award className="w-4 h-4" />, label: 'My Certificates' },
     { icon: <Heart className="w-4 h-4" />, label: 'Wishlist' },
     { icon: <Star className="w-4 h-4" />, label: 'Reviews' },
+    { icon: <HelpCircle className="w-4 h-4" />, label: 'Quizzes' },
     { icon: <HelpCircle className="w-4 h-4" />, label: 'My Quiz Attempts' },
     { icon: <ShoppingCart className="w-4 h-4" />, label: 'Order History' },
     { icon: <Repeat className="w-4 h-4" />, label: 'Referrals' },
@@ -119,6 +122,7 @@ const StudentDashboard = () => {
     'My Certificates': <MyCertificatesContent />,
     Wishlist: <WishlistContent />,
     Reviews: <ReviewsContent />,
+    Quizzes: <QuizListContent />,
     'My Quiz Attempts': <MyQuizAttemptsContent />,
     'Order History': <OrderHistoryContent />,
     Referrals: <ReferralsContent />,

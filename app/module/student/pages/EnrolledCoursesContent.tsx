@@ -1,6 +1,8 @@
-import { Award, BookOpen, CheckCircle, Clock, Play, Star, TrendingUp } from 'lucide-react';
+import { Award, BookOpen, CheckCircle, Clock, Play, Star, TrendingUp, HelpCircle } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 const EnrolledCoursesContent = () => {
+  const navigate = useNavigate();
   const enrolledCourses = [
     {
       id: 1,
@@ -192,10 +194,21 @@ const EnrolledCoursesContent = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <button className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:shadow-violet-500/50 transition flex items-center gap-2">
                     <Play className="w-4 h-4" />
                     Continue Learning
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Navigate to quizzes page with course filter
+                      navigate('/student')
+                      // Could add course filter later
+                    }}
+                    className="bg-slate-700 text-slate-300 px-5 py-2.5 rounded-lg font-semibold hover:bg-slate-600 transition flex items-center gap-2"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    View Quizzes
                   </button>
                   {course.status === 'completed' && (
                     <button className="bg-slate-700 text-slate-300 px-5 py-2.5 rounded-lg font-semibold hover:bg-slate-600 transition flex items-center gap-2">

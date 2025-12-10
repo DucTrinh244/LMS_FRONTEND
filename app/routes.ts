@@ -35,6 +35,8 @@ export default [
   // STUDENT ROUTES - Chỉ Student
   // ============================================
   route('student', 'module/student/pages/DashboardPage.tsx'),
+  route('student/quiz/:quizId/attempt', 'module/student/pages/QuizAttemptPage.tsx'),
+  route('student/quiz/attempt/:attemptId', 'module/student/pages/QuizAttemptDetailPage.tsx'),
 
   // ============================================
   // INSTRUCTOR ROUTES - Chỉ Instructor

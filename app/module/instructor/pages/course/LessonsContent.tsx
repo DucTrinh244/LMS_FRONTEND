@@ -1,8 +1,8 @@
-import { FileText, ChevronLeft, Edit2, Plus, Search, Trash2, X, Clock, Video, BookOpen } from 'lucide-react'
-import { useState, useEffect } from 'react'
-import { useToast } from '~/shared/hooks/useToast'
-import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
+import { BookOpen, ChevronLeft, ClipboardList, Clock, Edit2, FileText, HelpCircle, Plus, Search, Trash2, Video, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { courseInstructorService } from '~/module/instructor/services/CourseInstructorApi'
+import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
+import { useToast } from '~/shared/hooks/useToast'
 
 interface Lesson {
   id: string
@@ -14,7 +14,7 @@ interface Lesson {
   videoUrl?: string
   duration: number // in minutes
   order: number
-  type: 'video' | 'text' | 'mixed'
+  type: number // 1=Video, 2=Article, 3=Quiz, 4=Assignment
   isFree: boolean
   createdAt?: string
   updatedAt?: string
@@ -28,6 +28,7 @@ interface LessonsContentProps {
 
 const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, onBack }) => {
   const { toast } = useToast()
+  const { confirm } = useConfirmDialog()
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [chapters, setChapters] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +43,7 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
     videoUrl: '',
     duration: 0,
     order: 0,
-    type: 'video' as 'video' | 'text' | 'mixed',
+    type: 1, // 1=Video, 2=Article, 3=Quiz, 4=Assignment
     chapterId: '',
     isFree: false,
   })
@@ -69,23 +70,121 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
       const data = await courseInstructorService.getLessonsByCourse(courseId)
       // Handle API response format
       const lessonsList = data?.isSuccess ? data.value : data?.lessons ?? data ?? []
-      setLessons(lessonsList.sort((a: Lesson, b: Lesson) => a.order - b.order))
+
+      // Map API response to Lesson interface
+      const mappedLessons: Lesson[] = lessonsList.map((lesson: any) => {
+        return {
+          id: lesson.id,
+          courseId: lesson.courseId || courseId,
+          chapterId: lesson.chapterId,
+          title: lesson.title,
+          description: lesson.description || lesson.title || '', // Fallback to title if no description
+          content: lesson.content || '',
+          videoUrl: lesson.videoUrl,
+          duration: lesson.videoDuration ? Math.round(lesson.videoDuration / 60) : 0, // Convert seconds to minutes
+          order: lesson.sortOrder ?? lesson.order ?? 0,
+          type: lesson.type ?? 1, // 1=Video, 2=Article, 3=Quiz, 4=Assignment
+          isFree: lesson.isPreview ?? false,
+          createdAt: lesson.createdAt,
+          updatedAt: lesson.updatedAt,
+        }
+      })
+
+      setLessons(mappedLessons.sort((a: Lesson, b: Lesson) => (a.order || 0) - (b.order || 0)))
     } catch (error: any) {
       toast.error(error?.message || 'Không thể tải danh sách lessons')
-      // Use mock data for development
-      setLessons([
+      // Mock data for development
+      const mockLessons: Lesson[] = [
         {
           id: '1',
           courseId,
-          title: 'Lesson 1: Introduction',
-          description: 'Introduction to the lesson',
-          content: 'This is the lesson content',
+          chapterId: 'chapter-1',
+          title: 'Lesson 1: Giới thiệu về khóa học',
+          description: 'Tổng quan về khóa học và những gì bạn sẽ học',
+          content: 'Đây là nội dung chi tiết của lesson giới thiệu. Bạn sẽ được tìm hiểu về cấu trúc khóa học, mục tiêu học tập và cách sử dụng tài liệu.',
+          videoUrl: 'https://www.youtube.com/watch?v=example1',
           duration: 15,
           order: 1,
-          type: 'video',
+          type: 1, // Video
           isFree: true,
+          createdAt: '2024-01-15T10:00:00Z',
+          updatedAt: '2024-01-15T10:00:00Z',
         },
-      ])
+        {
+          id: '2',
+          courseId,
+          chapterId: 'chapter-1',
+          title: 'Lesson 2: Cài đặt môi trường phát triển',
+          description: 'Hướng dẫn cài đặt các công cụ cần thiết',
+          content: 'Trong lesson này, bạn sẽ học cách cài đặt và cấu hình môi trường phát triển. Chúng ta sẽ cài đặt IDE, các extension cần thiết và cấu hình các công cụ hỗ trợ.',
+          videoUrl: 'https://www.youtube.com/watch?v=example2',
+          duration: 25,
+          order: 2,
+          type: 1, // Video
+          isFree: false,
+          createdAt: '2024-01-16T10:00:00Z',
+          updatedAt: '2024-01-16T10:00:00Z',
+        },
+        {
+          id: '3',
+          courseId,
+          chapterId: 'chapter-2',
+          title: 'Lesson 3: Kiến thức cơ bản - Lý thuyết',
+          description: 'Nắm vững các khái niệm cơ bản',
+          content: 'Đây là lesson lý thuyết về các khái niệm cơ bản. Bạn sẽ được học về các nguyên tắc, quy tắc và best practices trong lĩnh vực này.',
+          duration: 0,
+          order: 3,
+          type: 2, // Article
+          isFree: false,
+          createdAt: '2024-01-17T10:00:00Z',
+          updatedAt: '2024-01-17T10:00:00Z',
+        },
+        {
+          id: '4',
+          courseId,
+          chapterId: 'chapter-2',
+          title: 'Lesson 4: Thực hành - Bài tập đầu tiên',
+          description: 'Áp dụng kiến thức vào thực tế',
+          content: 'Trong lesson này, bạn sẽ thực hành làm bài tập đầu tiên. Chúng ta sẽ áp dụng các kiến thức đã học vào một dự án thực tế.',
+          videoUrl: 'https://www.youtube.com/watch?v=example4',
+          duration: 30,
+          order: 4,
+          type: 3, // Quiz
+          isFree: true,
+          createdAt: '2024-01-18T10:00:00Z',
+          updatedAt: '2024-01-18T10:00:00Z',
+        },
+        {
+          id: '5',
+          courseId,
+          chapterId: 'chapter-3',
+          title: 'Lesson 5: Nâng cao - Kỹ thuật chuyên sâu',
+          description: 'Học các kỹ thuật nâng cao và tối ưu hóa',
+          content: 'Lesson này sẽ đi sâu vào các kỹ thuật nâng cao, cách tối ưu hóa hiệu suất và xử lý các tình huống phức tạp.',
+          videoUrl: 'https://www.youtube.com/watch?v=example5',
+          duration: 45,
+          order: 5,
+          type: 1, // Video
+          isFree: false,
+          createdAt: '2024-01-19T10:00:00Z',
+          updatedAt: '2024-01-19T10:00:00Z',
+        },
+        {
+          id: '6',
+          courseId,
+          chapterId: 'chapter-3',
+          title: 'Lesson 6: Bài tập lớn - Assignment',
+          description: 'Hoàn thành bài tập lớn để đánh giá kiến thức',
+          content: 'Đây là bài tập lớn yêu cầu bạn áp dụng toàn bộ kiến thức đã học. Bạn cần hoàn thành và nộp bài trong thời gian quy định.',
+          duration: 60,
+          order: 6,
+          type: 4, // Assignment
+          isFree: false,
+          createdAt: '2024-01-20T10:00:00Z',
+          updatedAt: '2024-01-20T10:00:00Z',
+        },
+      ]
+      setLessons(mockLessons)
     } finally {
       setLoading(false)
     }
@@ -104,7 +203,7 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
       videoUrl: '',
       duration: 0,
       order: lessons.length + 1,
-      type: 'video',
+      type: 1, // Video
       chapterId: '',
       isFree: false,
     })
@@ -131,7 +230,7 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
     const ok = await confirm('Bạn có chắc chắn muốn xóa lesson này?')
     if (ok) {
       try {
-        await courseInstructorService.deleteLesson(courseId, id)
+        await courseInstructorService.deleteLesson(id)
         setLessons((prev) => prev.filter((l) => l.id !== id))
         toast.success('Xóa lesson thành công!')
       } catch (error: any) {
@@ -148,7 +247,19 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
 
     try {
       if (editingLesson) {
-        await courseInstructorService.updateLesson(courseId, editingLesson.id, formData)
+        const updateData = {
+          id: editingLesson.id,
+          title: formData.title,
+          content: formData.content,
+          videoUrl: formData.videoUrl || undefined,
+          videoDuration: formData.duration * 60, // Convert minutes to seconds
+          type: formData.type,
+          sortOrder: formData.order,
+          isPublished: false, // Can be added to formData later
+          isPreview: formData.isFree,
+          resources: undefined,
+        }
+        await courseInstructorService.updateLesson(editingLesson.id, updateData)
         setLessons((prev) =>
           prev.map((l) =>
             l.id === editingLesson.id
@@ -158,7 +269,22 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
         )
         toast.success('Cập nhật lesson thành công!')
       } else {
-        const newLesson = await courseInstructorService.createLesson(courseId, formData)
+        if (!formData.chapterId) {
+          toast.error('Vui lòng chọn chapter')
+          return
+        }
+        const createData = {
+          chapterId: formData.chapterId,
+          title: formData.title,
+          content: formData.content,
+          videoUrl: formData.videoUrl || undefined,
+          videoDuration: formData.duration * 60, // Convert minutes to seconds
+          type: formData.type,
+          sortOrder: formData.order,
+          isPreview: formData.isFree,
+          resources: undefined,
+        }
+        const newLesson = await courseInstructorService.createLesson(createData)
         // Handle API response
         const lesson = newLesson?.isSuccess ? newLesson.value : newLesson
         setLessons((prev) => [
@@ -201,14 +327,33 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
     }
   }
 
-  const getTypeIcon = (type: string) => {
+  const getTypeIcon = (type: number) => {
     switch (type) {
-      case 'video':
+      case 1: // Video
         return <Video className="w-5 h-5 text-cyan-400" />
-      case 'text':
+      case 2: // Article
         return <FileText className="w-5 h-5 text-indigo-400" />
+      case 3: // Quiz
+        return <HelpCircle className="w-5 h-5 text-yellow-400" />
+      case 4: // Assignment
+        return <ClipboardList className="w-5 h-5 text-orange-400" />
       default:
         return <BookOpen className="w-5 h-5 text-purple-400" />
+    }
+  }
+
+  const getTypeName = (type: number): string => {
+    switch (type) {
+      case 1:
+        return 'Video'
+      case 2:
+        return 'Article'
+      case 3:
+        return 'Quiz'
+      case 4:
+        return 'Assignment'
+      default:
+        return 'Unknown'
     }
   }
 
@@ -290,16 +435,34 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
 
         {/* Lessons List */}
         <div className="grid gap-6">
-          {filteredLessons.length === 0 ? (
+          {lessons.length === 0 ? (
             <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-12 text-center">
               <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">Chưa có Lesson nào</h3>
               <p className="text-slate-400 mb-6">Tạo lesson đầu tiên cho khóa học của bạn</p>
               <button
                 onClick={handleAdd}
-                className="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition"
+                className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition font-medium"
               >
+                <Plus className="w-5 h-5 inline mr-2" />
                 Tạo Lesson
+              </button>
+            </div>
+          ) : filteredLessons.length === 0 ? (
+            <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-12 text-center">
+              <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Không tìm thấy Lesson nào</h3>
+              <p className="text-slate-400 mb-6">
+                Không có lesson nào phù hợp với tiêu chí tìm kiếm của bạn
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery('')
+                  setSelectedChapter('all')
+                }}
+                className="px-6 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition font-medium"
+              >
+                Xóa bộ lọc
               </button>
             </div>
           ) : (
@@ -326,7 +489,7 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
                         {lesson.duration} phút
                       </span>
                       <span className="text-slate-400">•</span>
-                      <span className="text-slate-400 capitalize">{lesson.type}</span>
+                      <span className="text-slate-400">{getTypeName(lesson.type)}</span>
                       {lesson.chapterId && (
                         <>
                           <span className="text-slate-400">•</span>
@@ -396,14 +559,15 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
                     <select
                       value={formData.type}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, type: e.target.value as any }))
+                        setFormData((prev) => ({ ...prev, type: Number(e.target.value) }))
                       }
                       className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                       required
                     >
-                      <option value="video">Video</option>
-                      <option value="text">Text</option>
-                      <option value="mixed">Mixed</option>
+                      <option value={1}>Video</option>
+                      <option value={2}>Article</option>
+                      <option value={3}>Quiz</option>
+                      <option value={4}>Assignment</option>
                     </select>
                   </div>
                 </div>

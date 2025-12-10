@@ -103,7 +103,7 @@ const ChaptersContent: React.FC<ChaptersContentProps> = ({ courseId, courseName,
     const ok = await confirm('Bạn có chắc chắn muốn xóa chapter này?')
     if (ok) {
       try {
-        await courseInstructorService.deleteChapter(courseId, id)
+        await courseInstructorService.deleteChapter(id)
         setChapters((prev) => prev.filter((c) => c.id !== id))
         toast.success('Xóa chapter thành công!')
       } catch (error: any) {
@@ -128,7 +128,7 @@ const ChaptersContent: React.FC<ChaptersContentProps> = ({ courseId, courseName,
           sortOrder: formData.order,
           isPublished: formData.isPublished,
         }
-        await courseInstructorService.updateChapter(courseId, editingChapter.id, updateData)
+        await courseInstructorService.updateChapter(editingChapter.id, updateData)
         setChapters((prev) =>
           prev.map((c) =>
             c.id === editingChapter.id
