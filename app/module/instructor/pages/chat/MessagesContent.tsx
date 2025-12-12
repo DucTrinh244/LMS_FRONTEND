@@ -3,9 +3,10 @@ import ChatInterface from '~/module/instructor/components/chat/ChatInterface'
 const MessagesContent = () => {
   return (
     <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md overflow-hidden">
-      <div className="h-[600px]">
+      <div className="h-[calc(100vh-12rem)]">
         <ChatInterface
-          instructorId="instructor-1"
+          userId="instructor-1"
+          userRole="instructor"
           className="h-full"
         />
       </div>

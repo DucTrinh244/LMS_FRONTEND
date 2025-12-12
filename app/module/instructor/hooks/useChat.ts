@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { chatService } from '~/module/instructor/services/ChatApi'
+import { signalRChatService } from '~/module/instructor/services/SignalRChatService'
 import type { 
   Conversation, 
   Message, 
@@ -136,8 +137,8 @@ const MOCK_MESSAGES: Record<string, Message[]> = {
   ]
 }
 
-// Set to true to use mock data (for development without backend)
-const USE_MOCK_DATA = true
+// Set to false to use real API (requires backend running)
+const USE_MOCK_DATA = false
 
 export function useConversations(filters?: ChatFilters) {
   return useQuery({
@@ -180,6 +181,67 @@ export function useMessages(conversationId: string, enabled = true) {
 export function useChat() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const signalRConnectedRef = useRef(false)
+
+  // Connect to SignalR on mount
+  useEffect(() => {
+    if (!USE_MOCK_DATA && !signalRConnectedRef.current) {
+      signalRChatService.connect()
+        .then(() => {
+          signalRConnectedRef.current = true
+          
+          // Setup real-time message handlers
+          signalRChatService.onPrivateMessage((message) => {
+            queryClient.setQueryData(
+              CHAT_QUERY_KEYS.messages(message.conversationId || ''),
+              (old: any) => ({
+                ...old,
+                messages: [...(old?.messages || []), message]
+              })
+            )
+            
+            queryClient.setQueryData(
+              CHAT_QUERY_KEYS.conversations,
+              (old: Conversation[] | undefined) =>
+                old?.map(conv => 
+                  conv.id === (message.conversationId || '')
+                    ? { ...conv, lastMessage: message, updatedAt: message.sentAt }
+                    : conv
+                )
+            )
+          })
+
+          signalRChatService.onGroupMessage((message) => {
+            queryClient.setQueryData(
+              CHAT_QUERY_KEYS.messages(message.conversationId || ''),
+              (old: any) => ({
+                ...old,
+                messages: [...(old?.messages || []), message]
+              })
+            )
+            
+            queryClient.setQueryData(
+              CHAT_QUERY_KEYS.conversations,
+              (old: Conversation[] | undefined) =>
+                old?.map(conv => 
+                  conv.id === (message.conversationId || '')
+                    ? { ...conv, lastMessage: message, updatedAt: message.sentAt }
+                    : conv
+                )
+            )
+          })
+        })
+        .catch((error) => {
+          console.error('Failed to connect to SignalR:', error)
+          toast.error('Không thể kết nối đến chat server')
+        })
+    }
+
+    return () => {
+      // Don't disconnect on unmount - keep connection alive
+      // signalRChatService.disconnect()
+    }
+  }, [queryClient, toast])
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -198,26 +260,64 @@ export function useChat() {
         }
         return newMessage
       }
+
+      // Use SignalR if connected, otherwise fallback to REST API
+      if (signalRConnectedRef.current && data.recipientId) {
+        await signalRChatService.sendPrivateMessage(data.recipientId, data.content)
+        // Message will be received via SignalR event
+        return {
+          id: `temp-${Date.now()}`,
+          senderId: 'current-user',
+          content: data.content,
+          sentAt: new Date().toISOString(),
+          edited: false,
+          deleted: false,
+          conversationId: data.conversationId
+        } as Message
+      } else if (signalRConnectedRef.current && data.groupId) {
+        await signalRChatService.sendGroupMessage(data.groupId, data.content)
+        return {
+          id: `temp-${Date.now()}`,
+          senderId: 'current-user',
+          content: data.content,
+          sentAt: new Date().toISOString(),
+          edited: false,
+          deleted: false,
+          conversationId: data.groupId
+        } as Message
+      }
+
+      // Fallback to REST API
       return chatService.sendMessage(data)
     },
     onSuccess: (newMessage) => {
-      queryClient.setQueryData(
-        CHAT_QUERY_KEYS.messages(newMessage.conversationId),
-        (old: any) => ({
-          ...old,
-          messages: [...(old?.messages || []), newMessage]
-        })
-      )
-      
-      queryClient.setQueryData(
-        CHAT_QUERY_KEYS.conversations,
-        (old: Conversation[] | undefined) =>
-          old?.map(conv => 
-            conv.id === newMessage.conversationId 
-              ? { ...conv, lastMessage: newMessage, updatedAt: newMessage.createdAt }
-              : conv
-          )
-      )
+      // Only update if not using SignalR (SignalR will handle it via events)
+      // SignalR events will update the cache automatically
+      if (!signalRConnectedRef.current || newMessage.id.startsWith('temp-')) {
+        const conversationId = newMessage.conversationId || newMessage.chatThreadId || newMessage.chatGroupId || ''
+        
+        queryClient.setQueryData(
+          CHAT_QUERY_KEYS.messages(conversationId),
+          (old: any) => ({
+            ...old,
+            messages: [...(old?.messages || []), newMessage]
+          })
+        )
+        
+        queryClient.setQueryData(
+          CHAT_QUERY_KEYS.conversations,
+          (old: Conversation[] | undefined) =>
+            old?.map(conv => 
+              conv.id === conversationId
+                ? { 
+                    ...conv, 
+                    lastMessage: newMessage, 
+                    updatedAt: newMessage.sentAt || newMessage.createdAt || new Date().toISOString()
+                  }
+                : conv
+            )
+        )
+      }
       
       toast.success('Tin nhắn đã được gửi!')
     },

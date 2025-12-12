@@ -1,7 +1,7 @@
-import React from 'react'
-import type { Conversation, User } from '~/module/instructor/types/Chat'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import React from 'react'
+import type { Conversation, User } from '~/module/instructor/types/Chat'
 
 interface ConversationListProps {
   conversations: Conversation[]
@@ -48,40 +48,45 @@ const ConversationList: React.FC<ConversationListProps> = ({
 
   const getConversationTitle = (conversation: Conversation) => {
     if (conversation.title) return conversation.title
-    
+
     // For direct messages, show the other participant's name
     if (conversation.type === 'direct' && conversation.participants.length === 2) {
+      // Find the other participant (not the current user)
+      // We'll need to pass currentUserRole, but for now assume instructor
       const otherParticipant = conversation.participants.find(p => p.role !== 'instructor')
       return otherParticipant?.name || 'Cuộc trò chuyện'
     }
-    
-    return `Nhóm (${conversation.participants.length} thành viên)`
+
+    const memberCount = conversation.type === 'group' && conversation.memberCount !== undefined
+      ? conversation.memberCount
+      : conversation.participants.length
+    return `Nhóm (${memberCount} thành viên)`
   }
 
   const getLastMessagePreview = (conversation: Conversation) => {
     if (!conversation.lastMessage) return 'Chưa có tin nhắn'
-    
+
     const { content, messageType, senderId } = conversation.lastMessage
     const sender = conversation.participants.find(p => p.id === senderId)
     const senderName = sender?.name || 'Không rõ'
-    
+
     if (messageType === 'image') return `${senderName}: 📷 Hình ảnh`
     if (messageType === 'file') return `${senderName}: 📎 Tệp đính kèm`
-    
+
     return `${senderName}: ${content.length > 50 ? content.substring(0, 50) + '...' : content}`
   }
 
   const getParticipantAvatars = (participants: User[]) => {
     // Show first 3 participants (excluding current instructor)
     const otherParticipants = participants.filter(p => p.role !== 'instructor').slice(0, 3)
-    
+
     return (
       <div className="relative">
         {otherParticipants.length === 1 ? (
           <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-600 flex items-center justify-center">
             {otherParticipants[0].avatar ? (
-              <img 
-                src={otherParticipants[0].avatar} 
+              <img
+                src={otherParticipants[0].avatar}
                 alt={otherParticipants[0].name}
                 className="w-full h-full object-cover"
               />
@@ -94,13 +99,13 @@ const ConversationList: React.FC<ConversationListProps> = ({
         ) : (
           <div className="flex -space-x-2">
             {otherParticipants.map((participant, index) => (
-              <div 
+              <div
                 key={participant.id}
                 className="w-8 h-8 rounded-full overflow-hidden bg-slate-600 border-2 border-slate-800 flex items-center justify-center"
               >
                 {participant.avatar ? (
-                  <img 
-                    src={participant.avatar} 
+                  <img
+                    src={participant.avatar}
                     alt={participant.name}
                     className="w-full h-full object-cover"
                   />
@@ -113,7 +118,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
             ))}
           </div>
         )}
-        
+
         {/* Online indicator */}
         {otherParticipants.length === 1 && otherParticipants[0].isOnline && (
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-800"></div>
@@ -125,54 +130,64 @@ const ConversationList: React.FC<ConversationListProps> = ({
   return (
     <div className="space-y-1">
       {conversations.map((conversation) => (
-        <div
+        <button
           key={conversation.id}
-          onClick={() => onSelectConversation(conversation.id)}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onSelectConversation(conversation.id)
+          }}
+          onMouseDown={(e) => {
+            // Prevent default behavior that might cause scroll
+            e.preventDefault()
+          }}
           className={`
-            flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-200
+            w-full flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-200 text-left
             hover:bg-slate-700/50 
-            ${activeConversationId === conversation.id 
-              ? 'bg-blue-600/20 border border-blue-500/30' 
+            ${activeConversationId === conversation.id
+              ? 'bg-gradient-to-r from-violet-600/20 to-purple-600/20 border border-violet-500/30'
               : 'hover:bg-slate-700/30'
             }
           `}
+          style={{ userSelect: 'none', outline: 'none' }}
         >
           {/* Avatar(s) */}
           {getParticipantAvatars(conversation.participants)}
-          
+
           {/* Conversation Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <h3 className={`
                 text-sm font-medium truncate
-                ${activeConversationId === conversation.id ? 'text-blue-400' : 'text-white'}
+                ${activeConversationId === conversation.id ? 'text-violet-400' : 'text-white'}
               `}>
                 {getConversationTitle(conversation)}
               </h3>
-              
-              {conversation.lastMessage && (
+
+              {conversation.lastMessage && conversation.lastMessage.createdAt && (
                 <span className="text-xs text-slate-400 ml-2 flex-shrink-0">
-                  {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), { 
-                    addSuffix: true, 
-                    locale: vi 
+                  {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), {
+                    addSuffix: true,
+                    locale: vi
                   })}
                 </span>
               )}
             </div>
-            
+
             <div className="flex items-center justify-between mt-1">
               <p className="text-xs text-slate-400 truncate pr-2">
                 {getLastMessagePreview(conversation)}
               </p>
-              
+
               {/* Unread count */}
               {conversation.unreadCount > 0 && (
-                <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center flex-shrink-0">
+                <span className="bg-gradient-to-r from-violet-600 to-purple-600 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center flex-shrink-0">
                   {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
                 </span>
               )}
             </div>
-            
+
             {/* Course tag */}
             {conversation.courseName && (
               <div className="mt-1">
@@ -182,7 +197,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
               </div>
             )}
           </div>
-        </div>
+        </button>
       ))}
     </div>
   )

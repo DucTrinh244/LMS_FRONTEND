@@ -10,13 +10,19 @@ export interface User {
 
 export interface Message {
   id: string
-  conversationId: string
   senderId: string
+  chatThreadId?: string | null
+  chatGroupId?: string | null
   content: string
-  messageType: 'text' | 'image' | 'file' | 'system'
-  createdAt: string
-  updatedAt: string
-  isRead: boolean
+  sentAt: string
+  edited: boolean
+  deleted: boolean
+  // Frontend only fields
+  conversationId?: string
+  messageType?: 'text' | 'image' | 'file' | 'system'
+  createdAt?: string
+  updatedAt?: string
+  isRead?: boolean
   replyTo?: string
   attachments?: MessageAttachment[]
 }
@@ -41,10 +47,19 @@ export interface Conversation {
   isArchived: boolean
   courseId?: string
   courseName?: string
+  // For group conversations
+  name?: string
+  description?: string
+  ownerId?: string
+  isPrivate?: boolean
+  lastMessageAt?: string
+  memberCount?: number
 }
 
 export interface SendMessageRequest {
-  conversationId: string
+  conversationId?: string
+  recipientId?: string // For private messages
+  groupId?: string // For group messages
   content: string
   messageType?: 'text' | 'image' | 'file'
   replyTo?: string

@@ -1,75 +1,243 @@
+import { useQueryClient } from '@tanstack/react-query'
 import React, { useState } from 'react'
-import ConversationList from './ConversationList'
-import MessageList from './MessageList'
-import MessageInput from './MessageInput'
-import NewConversationModal from './NewConversationModal'
-import { useConversations, useMessages, useChat, useActiveConversation } from '~/module/instructor/hooks/useChat'
+import { useActiveConversation, useChat, useConversations, useMessages } from '~/module/instructor/hooks/useChat'
+import type { ChatFilters, Conversation, User } from '~/module/instructor/types/Chat'
+import { useAuth } from '~/shared/hooks/useAuth'
 import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
-import type { ChatFilters, User } from '~/module/instructor/types/Chat'
+import AddMemberModal from './AddMemberModal'
+import ConversationList from './ConversationList'
+import MessageInput from './MessageInput'
+import MessageList from './MessageList'
+import NewConversationModal from './NewConversationModal'
 
 interface ChatInterfaceProps {
-  instructorId?: string
+  userId?: string
+  userRole?: 'instructor' | 'student'
   className?: string
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
-  instructorId, 
-  className = '' 
+const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  userId,
+  userRole = 'instructor',
+  className = ''
 }) => {
+  // Backward compatibility
+  const instructorId = userId
   const { confirm } = useConfirmDialog()
+  const queryClient = useQueryClient()
+  const { user: authUser } = useAuth()
   const [filters, setFilters] = useState<ChatFilters>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
-  
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
+
+  // Get current user ID - prioritize auth context, then fallback to props
+  // Also try to find current user in group members if available
+  const getCurrentUserId = () => {
+    // First priority: auth context
+    if (authUser?.id) {
+      return authUser.id
+    }
+
+    // Note: activeConversation is not available here yet, so we skip this check
+    // It will be handled when conversation is loaded
+
+    // Fallback to props
+    return userId || instructorId || 'current-user'
+  }
+
+  const currentUserId = getCurrentUserId()
+
   // Chat hooks
   const { activeConversationId, selectConversation } = useActiveConversation()
   const { sendMessage, markAsRead, deleteMessage, createConversation, isSending, isCreatingConversation } = useChat()
-  
+
   // Data hooks
-  const { 
-    data: conversations = [], 
-    isLoading: loadingConversations 
+  const {
+    data: conversations = [],
+    isLoading: loadingConversations
   } = useConversations(filters)
-  
-  const { 
-    data: messagesData, 
-    isLoading: loadingMessages 
+
+  const {
+    data: messagesData,
+    isLoading: loadingMessages
   } = useMessages(activeConversationId || '', !!activeConversationId)
 
-  // Mock available students (in real app, this would come from API)
-  const [availableStudents] = useState<User[]>([
-    {
-      id: '1',
-      name: 'Nguyễn Văn A',
-      email: 'student1@example.com',
-      role: 'student',
-      isOnline: true
-    },
-    {
-      id: '2', 
-      name: 'Trần Thị B',
-      email: 'student2@example.com',
-      role: 'student',
-      isOnline: false,
-      lastSeen: new Date().toISOString()
-    },
-    {
-      id: '3',
-      name: 'Lê Văn C', 
-      email: 'student3@example.com',
-      role: 'student',
-      isOnline: true
+  // Mock available users (students for instructor, instructors for student)
+  const [availableUsers] = useState<User[]>(() => {
+    if (userRole === 'student') {
+      // For students, show available instructors
+      return [
+        {
+          id: 'instructor-1',
+          name: 'Sarah Johnson',
+          email: 'sarah@example.com',
+          role: 'instructor',
+          isOnline: true
+        },
+        {
+          id: 'instructor-2',
+          name: 'Michael Chen',
+          email: 'michael@example.com',
+          role: 'instructor',
+          isOnline: false,
+          lastSeen: new Date().toISOString()
+        },
+        {
+          id: 'instructor-3',
+          name: 'Emily Davis',
+          email: 'emily@example.com',
+          role: 'instructor',
+          isOnline: true
+        }
+      ]
+    } else {
+      // For instructors, show available students
+      return [
+        {
+          id: '1',
+          name: 'Nguyễn Văn A',
+          email: 'student1@example.com',
+          role: 'student',
+          isOnline: true
+        },
+        {
+          id: '2',
+          name: 'Trần Thị B',
+          email: 'student2@example.com',
+          role: 'student',
+          isOnline: false,
+          lastSeen: new Date().toISOString()
+        },
+        {
+          id: '3',
+          name: 'Lê Văn C',
+          email: 'student3@example.com',
+          role: 'student',
+          isOnline: true
+        }
+      ]
     }
-  ])
+  })
+
+  // State to store conversation with members
+  const [conversationWithMembers, setConversationWithMembers] = React.useState<Conversation | null>(null)
 
   // Get active conversation data
-  const activeConversation = conversations.find(c => c.id === activeConversationId)
+  const baseConversation = conversations.find(c => c.id === activeConversationId)
+  const activeConversation = conversationWithMembers || baseConversation
   const messages = messagesData?.messages || []
+
+  // Load conversation members when conversation is selected
+  React.useEffect(() => {
+    if (activeConversationId && baseConversation?.type === 'group') {
+      // Fetch group members
+      const loadGroupMembers = async () => {
+        try {
+          const { chatService } = await import('~/module/instructor/services/ChatApi')
+          const members = await chatService.getGroupMembers(activeConversationId)
+
+          // Map members to User format
+          const participants: User[] = members.map(member => ({
+            id: member.userId,
+            name: member.fullName,
+            email: member.email,
+            role: member.isAdmin ? 'instructor' : 'student',
+            avatar: member.avatarUrl || undefined,
+            isOnline: false // Will be updated if we have online status API
+          }))
+
+          // Update conversation with members
+          setConversationWithMembers({
+            ...baseConversation,
+            participants
+          })
+        } catch (error) {
+          console.error('Error loading group members:', error)
+          // Keep base conversation if loading fails
+          setConversationWithMembers(null)
+        }
+      }
+
+      loadGroupMembers()
+    } else {
+      // Reset when conversation changes or is not a group
+      setConversationWithMembers(null)
+    }
+  }, [activeConversationId, baseConversation, currentUserId, authUser])
+
+  // Update participants when new messages arrive (to handle senders not in participants list)
+  React.useEffect(() => {
+    if (activeConversation && messages.length > 0 && activeConversation.type === 'group') {
+      // Find all unique senderIds from messages
+      const messageSenders = new Set(messages.map(m => m.senderId).filter(Boolean))
+
+      // Check if any sender is missing from participants
+      const missingSenders = Array.from(messageSenders).filter(
+        (senderId: string) => !activeConversation.participants.some((p: User) => p.id === senderId)
+      )
+
+      if (missingSenders.length > 0) {
+        // Reload group members to get missing senders
+        const loadMissingMembers = async () => {
+          try {
+            const { chatService } = await import('~/module/instructor/services/ChatApi')
+            const members = await chatService.getGroupMembers(activeConversationId || '')
+
+            // Map members to User format
+            const participants: User[] = members.map(member => ({
+              id: member.userId,
+              name: member.fullName,
+              email: member.email,
+              role: member.isAdmin ? 'instructor' : 'student',
+              avatar: member.avatarUrl || undefined,
+              isOnline: false
+            }))
+
+            // Update conversation with all members
+            setConversationWithMembers((prev: Conversation | null) => prev ? {
+              ...prev,
+              participants
+            } : null)
+          } catch (error) {
+            console.error('Error reloading group members:', error)
+          }
+        }
+
+        loadMissingMembers()
+      }
+    }
+  }, [messages, activeConversation, activeConversationId])
 
   // Handlers
   const handleSelectConversation = async (conversationId: string) => {
     selectConversation(conversationId)
-    
+
+    // Pre-load group members if it's a group conversation
+    const selectedConversation = conversations.find(c => c.id === conversationId)
+    if (selectedConversation?.type === 'group') {
+      try {
+        const { chatService } = await import('~/module/instructor/services/ChatApi')
+        const members = await chatService.getGroupMembers(conversationId)
+
+        const participants: User[] = members.map(member => ({
+          id: member.userId,
+          name: member.fullName,
+          email: member.email,
+          role: member.isAdmin ? 'instructor' : 'student',
+          avatar: member.avatarUrl || undefined,
+          isOnline: false
+        }))
+
+        setConversationWithMembers({
+          ...selectedConversation,
+          participants
+        })
+      } catch (error) {
+        console.error('Error pre-loading group members:', error)
+      }
+    }
+
     // Mark conversation as read
     try {
       await markAsRead(conversationId)
@@ -79,11 +247,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }
 
   const handleSendMessage = async (data: any) => {
-    if (!activeConversationId) return
-    
+    if (!activeConversationId || !activeConversation) return
+
+    // Determine if it's a group or private conversation
+    const isGroup = activeConversation.type === 'group'
+
     await sendMessage({
       ...data,
-      conversationId: activeConversationId
+      conversationId: activeConversationId,
+      groupId: isGroup ? activeConversationId : undefined,
+      // For private messages, we need the other participant's ID
+      recipientId: !isGroup
+        ? activeConversation.participants.find((p: User) => p.role !== userRole)?.id
+        : undefined
     })
   }
 
@@ -102,30 +278,42 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }))
   }
 
-  const handleCreateConversation = async (data: any) => {
-    const conversation = await createConversation(data)
-    
+  const handleCreateConversation = async (groupId: string) => {
+    // Group đã được tạo, chỉ cần refresh conversations và select
+    // Refresh conversations list
+    queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] })
+
     // Auto-select the new conversation
-    if (conversation && conversation.id) {
-      selectConversation(conversation.id)
-    }
-    
+    selectConversation(groupId)
+
     setShowNewConversationModal(false)
+  }
+
+  const handleAddMembers = async (emails: string[]) => {
+    if (!activeConversationId || !activeConversation || activeConversation.type !== 'group') {
+      return
+    }
+
+    const { chatService } = await import('~/module/instructor/services/ChatApi')
+    await chatService.addUsersToGroupByEmail(activeConversationId, emails)
+
+    // Refresh conversations to update member count
+    queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] })
   }
 
   const filteredConversations = conversations.filter(conv => {
     if (!searchTerm) return true
-    
+
     const searchLower = searchTerm.toLowerCase()
     const title = conv.title?.toLowerCase() || ''
     const lastMessageContent = conv.lastMessage?.content?.toLowerCase() || ''
     const participantNames = conv.participants
       .map(p => p.name.toLowerCase())
       .join(' ')
-    
-    return title.includes(searchLower) || 
-           lastMessageContent.includes(searchLower) || 
-           participantNames.includes(searchLower)
+
+    return title.includes(searchLower) ||
+      lastMessageContent.includes(searchLower) ||
+      participantNames.includes(searchLower)
   })
 
   return (
@@ -136,18 +324,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="p-4 border-b border-slate-700">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-white">Tin nhắn</h2>
-            <button
-              onClick={() => setShowNewConversationModal(true)}
-              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-              title="Tạo cuộc trò chuyện mới"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span className="text-sm hidden sm:inline">Mới</span>
-            </button>
+            {userRole === 'instructor' && (
+              <button
+                onClick={() => setShowNewConversationModal(true)}
+                className="p-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-colors flex items-center space-x-2"
+                title="Tạo cuộc trò chuyện mới"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span className="text-sm hidden sm:inline">Mới</span>
+              </button>
+            )}
           </div>
-          
+
           {/* Search */}
           <div className="relative">
             <input
@@ -155,12 +345,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               placeholder="Tìm kiếm cuộc trò chuyện..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
             />
-            <svg 
-              className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" 
-              fill="none" 
-              stroke="currentColor" 
+            <svg
+              className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"
+              fill="none"
+              stroke="currentColor"
               viewBox="0 0 24 24"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -171,22 +361,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className="flex space-x-2 mt-3">
             <button
               onClick={() => setFilters(prev => ({ ...prev, hasUnread: prev.hasUnread ? undefined : true }))}
-              className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                filters.hasUnread 
-                  ? 'bg-blue-600 border-blue-600 text-white' 
-                  : 'border-slate-600 text-slate-400 hover:border-slate-500'
-              }`}
+              className={`px-3 py-1 text-xs rounded-full border transition-colors ${filters.hasUnread
+                ? 'bg-gradient-to-r from-violet-600 to-purple-600 border-violet-600 text-white'
+                : 'border-slate-600 text-slate-400 hover:border-slate-500'
+                }`}
             >
               Chưa đọc
             </button>
-            
+
             <button
               onClick={() => setFilters(prev => ({ ...prev, isArchived: prev.isArchived ? undefined : false }))}
-              className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                filters.isArchived === false 
-                  ? 'bg-blue-600 border-blue-600 text-white' 
-                  : 'border-slate-600 text-slate-400 hover:border-slate-500'
-              }`}
+              className={`px-3 py-1 text-xs rounded-full border transition-colors ${filters.isArchived === false
+                ? 'bg-gradient-to-r from-violet-600 to-purple-600 border-violet-600 text-white'
+                : 'border-slate-600 text-slate-400 hover:border-slate-500'
+                }`}
             >
               Hoạt động
             </button>
@@ -194,7 +382,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
 
         {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div
+          className="flex-1 overflow-y-auto p-4"
+          onScroll={(e) => {
+            // Prevent scroll event from bubbling
+            e.stopPropagation()
+          }}
+        >
           <ConversationList
             conversations={filteredConversations}
             activeConversationId={activeConversationId}
@@ -215,16 +409,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   {/* Conversation Avatar */}
                   <div className="flex -space-x-2">
                     {activeConversation.participants
-                      .filter(p => p.role !== 'instructor')
+                      .filter((p: User) => p.role !== userRole)
                       .slice(0, 2)
-                      .map((participant, index) => (
-                        <div 
+                      .map((participant: User, index: number) => (
+                        <div
                           key={participant.id}
                           className="w-10 h-10 rounded-full overflow-hidden bg-slate-600 border-2 border-slate-800 flex items-center justify-center relative"
                         >
                           {participant.avatar ? (
-                            <img 
-                              src={participant.avatar} 
+                            <img
+                              src={participant.avatar}
                               alt={participant.name}
                               className="w-full h-full object-cover"
                             />
@@ -233,7 +427,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               {participant.name.charAt(0).toUpperCase()}
                             </span>
                           )}
-                          
+
                           {participant.isOnline && (
                             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-800"></div>
                           )}
@@ -241,30 +435,50 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       ))
                     }
                   </div>
-                  
+
                   {/* Conversation Info */}
-                  <div>
-                    <h3 className="font-medium text-white">
-                      {activeConversation.title || 
-                       activeConversation.participants
-                         .filter(p => p.role !== 'instructor')
-                         .map(p => p.name)
-                         .join(', ')
-                      }
-                    </h3>
-                    
-                    <p className="text-sm text-slate-400">
-                      {activeConversation.participants.length} thành viên
-                      {activeConversation.courseName && (
-                        <> • 📚 {activeConversation.courseName}</>
+                  <div className="flex-1">
+                    <div>
+                      <h3 className="font-medium text-white">
+                        {activeConversation.title ||
+                          activeConversation.participants
+                            .filter((p: User) => p.role !== userRole)
+                            .map((p: User) => p.name)
+                            .join(', ')
+                        }
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-slate-400">
+                        {activeConversation.type === 'group' && activeConversation.memberCount !== undefined
+                          ? `${activeConversation.memberCount} thành viên`
+                          : `${activeConversation.participants.length} thành viên`
+                        }
+                        {activeConversation.courseName && (
+                          <> • 📚 {activeConversation.courseName}</>
+                        )}
+                      </p>
+                      {/* Add Member button - only for groups, next to member count */}
+                      {activeConversation.type === 'group' && (
+                        <button
+                          onClick={() => setShowAddMemberModal(true)}
+                          className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 hover:text-violet-400 hover:bg-slate-700/50 rounded transition-colors"
+                          title="Thêm thành viên"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span>Add member</span>
+                        </button>
                       )}
-                    </p>
+                    </div>
                   </div>
                 </div>
 
                 {/* Chat Actions */}
                 <div className="flex items-center space-x-2">
-                  <button 
+                  <button
                     className="p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-700 rounded-lg transition-colors"
                     title="Tùy chọn"
                   >
@@ -280,14 +494,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <MessageList
               messages={messages}
               participants={activeConversation.participants}
-              currentUserId={instructorId || 'current-instructor'}
+              currentUserId={currentUserId}
               isLoading={loadingMessages}
               onDeleteMessage={handleDeleteMessage}
+              conversationId={activeConversationId || undefined}
             />
 
             {/* Message Input */}
             <MessageInput
-              conversationId={activeConversationId}
+              conversationId={activeConversationId || ''}
               onSendMessage={handleSendMessage}
               isSending={isSending}
             />
@@ -311,9 +526,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         isOpen={showNewConversationModal}
         onClose={() => setShowNewConversationModal(false)}
         onCreateConversation={handleCreateConversation}
-        availableStudents={availableStudents}
+        availableStudents={availableUsers}
         isCreating={isCreatingConversation}
+        userRole={userRole}
       />
+
+      {/* Add Member Modal - only show when group conversation is active */}
+      {activeConversation && activeConversation.type === 'group' && activeConversationId && (
+        <AddMemberModal
+          isOpen={showAddMemberModal}
+          onClose={() => setShowAddMemberModal(false)}
+          onAddMembers={handleAddMembers}
+          groupId={activeConversationId}
+        />
+      )}
     </div>
   )
 }
