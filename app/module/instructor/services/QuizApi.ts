@@ -182,6 +182,21 @@ export const quizService = {
     return httpClient.delete(`/quiz/question/${id}`).then((res) => res.data)
   },
 
+  /**
+   * Reorder questions
+   */
+  reorderQuestions: (
+    quizId: string,
+    questionOrders: { questionId: string; sortOrder: number }[]
+  ): Promise<BaseResponse<boolean>> => {
+    return httpClient
+      .put('/quiz/questions/reorder', {
+        quizId,
+        questionOrders,
+      })
+      .then((res) => res.data)
+  },
+
   // ==================== Answer Operations ====================
 
   /**
@@ -328,6 +343,21 @@ export const quizService = {
    */
   getUnpublishedQuizzes: (): Promise<BaseResponse<QuizListDto[]>> => {
     return httpClient.get('/quiz/unpublished').then((res) => res.data)
+  },
+
+  /**
+   * Generate quiz with AI
+   */
+  generateQuizWithAI: (data: {
+    courseId: string
+    lessonId?: string
+    chapterId?: string
+    courseInfo: string
+    numberOfQuestions: number
+    difficulty: 'easy' | 'medium' | 'hard'
+    topic: string
+  }): Promise<BaseResponse<any>> => {
+    return httpClient.post('/Quiz/generate-quiz', data).then((res) => res.data)
   },
 }
 

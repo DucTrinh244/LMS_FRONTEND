@@ -42,6 +42,7 @@ export default [
   // INSTRUCTOR ROUTES - Chỉ Instructor
   // ============================================
   route('instructor', 'module/instructor/pages/DashboardPage.tsx'),
+  route('instructor/courses/:courseId/preview', 'module/instructor/pages/course/PreviewCourseInstructorPage.tsx'),
 
   // ============================================
   // ADMIN ROUTES - Chỉ Admin

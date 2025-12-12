@@ -1,5 +1,5 @@
 import type { CourseEditInstructorRequest } from '~/module/instructor/types/CourseInstructor'
-import httpClient from '~/services/httpClient'
+import httpClient, { getApiBaseURL } from '~/services/httpClient'
 
 export const courseInstructorService = {
   // Get all courses for an instructor
@@ -36,7 +36,7 @@ export const courseInstructorService = {
 
   // Get course details
   getCourseDetails: (courseId: string): Promise<any> => {
-    return httpClient.get(`/courses/${courseId}`).then((res) => res.data)
+    return httpClient.get(`/course/${courseId}`).then((res) => res.data)
   },
 
   // Delete course
@@ -46,12 +46,12 @@ export const courseInstructorService = {
 
   // Publish/unpublish course
   publishCourse: (id: string, published: boolean): Promise<any> => {
-    return httpClient.patch(`/courses/${id}/publish`, { published }).then((res) => res.data)
+    return httpClient.patch(`/course/${id}/publish`, { published }).then((res) => res.data)
   },
 
   // Get course statistics for instructor
   getCourseStats: (courseId: string): Promise<any> => {
-    return httpClient.get(`/courses/${courseId}/stats`).then((res) => res.data)
+    return httpClient.get(`/course/${courseId}/stats`).then((res) => res.data)
   },
 
   // Chapter Management
@@ -98,19 +98,61 @@ export const courseInstructorService = {
   getLessonDetail: (lessonId: string): Promise<any> => {
     return httpClient.get(`/lesson/${lessonId}/detail`).then((res) => res.data)
   },
-  createLesson: (data: { chapterId: string; title: string; content?: string; videoUrl?: string; videoDuration?: number; type?: number; sortOrder?: number; isPreview?: boolean; resources?: string }): Promise<any> => {
-    const requestBody = {
-      chapterId: data.chapterId,
-      title: data.title,
-      content: data.content ?? null,
-      videoUrl: data.videoUrl ?? null,
-      videoDuration: data.videoDuration ?? 0,
-      type: data.type ?? 1, // 1=Video, 2=Text, 3=Document
-      sortOrder: data.sortOrder ?? 0,
-      isPreview: data.isPreview ?? true,
-      resources: data.resources ?? null,
-    }
-    return httpClient.post('/lesson', requestBody).then((res) => res.data)
+  createLesson: (
+    formData: FormData,
+    onProgress?: (progress: number) => void
+  ): Promise<any> => {
+    // Sử dụng XMLHttpRequest để track upload progress
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          const progress = (e.loaded / e.total) * 100
+          onProgress(progress)
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 201 || xhr.status === 200) {
+          try {
+            const data = JSON.parse(xhr.responseText)
+            if (data.isSuccess) {
+              resolve(data)
+            } else {
+              reject(new Error(data.error?.message || 'Failed to create lesson'))
+            }
+          } catch (error) {
+            reject(new Error('Failed to parse response'))
+          }
+        } else {
+          try {
+            const data = JSON.parse(xhr.responseText)
+            reject(new Error(data.error?.message || `Failed with status ${xhr.status}`))
+          } catch {
+            reject(new Error(`Failed with status ${xhr.status}`))
+          }
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error'))
+      })
+
+      xhr.addEventListener('abort', () => {
+        reject(new Error('Upload cancelled'))
+      })
+
+      const token = localStorage.getItem('accessToken')
+      const baseURL = getApiBaseURL()
+
+      xhr.open('POST', `${baseURL}/lesson`)
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      }
+      // KHÔNG set Content-Type header - browser sẽ tự động set với boundary
+      xhr.send(formData)
+    })
   },
   updateLesson: (lessonId: string, data: { id: string; title: string; content?: string; videoUrl?: string; videoDuration?: number; type?: number; sortOrder?: number; isPublished?: boolean; isPreview?: boolean; resources?: string }): Promise<any> => {
     const requestBody = {

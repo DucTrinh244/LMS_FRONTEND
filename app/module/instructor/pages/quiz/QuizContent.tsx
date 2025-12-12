@@ -1,4 +1,4 @@
-import { CheckCircle, ChevronDown, Clock, Edit2, Eye, HelpCircle, Plus, Search, Trash2, X } from 'lucide-react'
+import { CheckCircle, ChevronDown, ChevronUp, Clock, Edit2, Eye, HelpCircle, Plus, Search, Sparkles, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useCourseInstructor } from '~/module/instructor/hooks/useCourseInstructor'
 import { useQuizMutations, useQuizzes } from '~/module/instructor/hooks/useQuiz'
@@ -21,15 +21,31 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
   const { createQuiz, updateQuiz, deleteQuiz, publishQuiz, createQuestion, updateQuestion, deleteQuestion, isCreating, isUpdating, isDeleting } = useQuizMutations()
 
   const [lessons, setLessons] = useState<any[]>([])
+  const [chapters, setChapters] = useState<any[]>([])
+  const [aiLessons, setAiLessons] = useState<any[]>([])
+  const [aiChapters, setAiChapters] = useState<any[]>([])
   const [selectedQuizDetail, setSelectedQuizDetail] = useState<QuizDetailDto | null>(null)
   const [quizzesList, setQuizzesList] = useState<QuizListDto[]>([])
+  const [selectedCourseId, setSelectedCourseId] = useState<string>(courseId || '')
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('All')
   const [showModal, setShowModal] = useState(false)
   const [showQuestionsModal, setShowQuestionsModal] = useState(false)
+  const [showAIModal, setShowAIModal] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [aiFormData, setAiFormData] = useState({
+    courseId: courseId || '',
+    lessonId: '',
+    chapterId: '',
+    courseInfo: '',
+    numberOfQuestions: 5,
+    difficulty: 'medium' as 'easy' | 'medium' | 'hard',
+    topic: '',
+  })
   const [editingQuiz, setEditingQuiz] = useState<QuizListDto | null>(null)
   const [selectedQuiz, setSelectedQuiz] = useState<QuizListDto | null>(null)
+  const [editingQuestion, setEditingQuestion] = useState<any>(null)
   const [formData, setFormData] = useState({
     lessonId: '',
     lessonTitle: '',
@@ -71,17 +87,53 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
 
   useEffect(() => {
     if (courseId) {
-      loadLessons()
+      setSelectedCourseId(courseId)
+      loadLessons(courseId)
+      loadChapters(courseId)
     }
   }, [courseId])
 
-  const loadLessons = async () => {
+  useEffect(() => {
+    if (selectedCourseId) {
+      loadLessons(selectedCourseId)
+      loadChapters(selectedCourseId)
+    }
+  }, [selectedCourseId])
+
+  const loadLessons = async (courseIdToLoad: string) => {
     try {
-      const data = await courseInstructorService.getLessonsByCourse(courseId || '')
+      const data = await courseInstructorService.getLessonsByCourse(courseIdToLoad)
       const lessonsList = data?.isSuccess ? data.value : data?.lessons ?? data ?? []
       setLessons(lessonsList)
     } catch (error) {
       setLessons([])
+    }
+  }
+
+  const loadChapters = async (courseIdToLoad: string) => {
+    try {
+      const data = await courseInstructorService.getChaptersByCourse(courseIdToLoad)
+      const chaptersList = data?.isSuccess ? data.value : data?.chapters ?? data ?? []
+      setChapters(chaptersList)
+    } catch (error) {
+      setChapters([])
+    }
+  }
+
+  const loadAiLessonsAndChapters = async (courseIdToLoad: string) => {
+    try {
+      // Load lessons
+      const lessonsData = await courseInstructorService.getLessonsByCourse(courseIdToLoad)
+      const lessonsList = lessonsData?.isSuccess ? lessonsData.value : lessonsData?.lessons ?? lessonsData ?? []
+      setAiLessons(lessonsList)
+
+      // Load chapters
+      const chaptersData = await courseInstructorService.getChaptersByCourse(courseIdToLoad)
+      const chaptersList = chaptersData?.isSuccess ? chaptersData.value : chaptersData?.chapters ?? chaptersData ?? []
+      setAiChapters(chaptersList)
+    } catch (error) {
+      setAiLessons([])
+      setAiChapters([])
     }
   }
 
@@ -109,6 +161,12 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
       showCorrectAnswers: true,
       sortOrder: quizzesList.length + 1,
     })
+    // Load lessons when opening modal if courseId is available
+    if (courseId) {
+      loadLessons(courseId)
+    } else if (selectedCourseId) {
+      loadLessons(selectedCourseId)
+    }
     setShowModal(true)
   }
 
@@ -241,23 +299,64 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
         })
       }
 
-      if (answers.length === 0) {
+      // Validate answers
+      if (questionFormData.type !== QType.Essay && answers.length === 0) {
         toast.error('Vui lòng thêm ít nhất một đáp án')
         return
       }
 
-      const questionData: CreateQuizQuestionDto = {
-        quizId: selectedQuiz.id,
-        questionText: questionFormData.questionText,
-        explanation: questionFormData.explanation || null,
-        type: questionFormData.type || QType.SingleChoice,
-        points: questionFormData.points || 10,
-        sortOrder: questionFormData.sortOrder || (selectedQuizDetail?.questions.length || 0) + 1,
-        imageUrl: null,
-        answers: answers,
+      if (questionFormData.type === QType.SingleChoice || questionFormData.type === QType.TrueFalse) {
+        const hasCorrect = answers.some((a) => a.isCorrect)
+        if (!hasCorrect) {
+          toast.error('Vui lòng chọn ít nhất một đáp án đúng')
+          return
+        }
       }
 
-      await createQuestion(questionData)
+      if (questionFormData.type === QType.MultipleChoice) {
+        const hasCorrect = answers.some((a) => a.isCorrect)
+        if (!hasCorrect) {
+          toast.error('Vui lòng chọn ít nhất một đáp án đúng')
+          return
+        }
+      }
+
+      if (editingQuestion) {
+        // Update existing question
+        const updateData = {
+          id: editingQuestion.id,
+          questionText: questionFormData.questionText,
+          explanation: questionFormData.explanation || null,
+          type: questionFormData.type || QType.SingleChoice,
+          points: questionFormData.points || 10,
+          sortOrder: questionFormData.sortOrder || editingQuestion.sortOrder,
+          imageUrl: null,
+        }
+        await updateQuestion({ id: editingQuestion.id, data: updateData })
+
+        // Delete old answers and create new ones
+        // Note: In a real scenario, you might want to update existing answers instead
+        for (const answer of editingQuestion.answers || []) {
+          await quizService.deleteAnswer(answer.id)
+        }
+        for (const answer of answers) {
+          await quizService.addAnswer(editingQuestion.id, answer.answerText, answer.isCorrect, answer.sortOrder)
+        }
+      } else {
+        // Create new question
+        const questionData: CreateQuizQuestionDto = {
+          quizId: selectedQuiz.id,
+          questionText: questionFormData.questionText,
+          explanation: questionFormData.explanation || null,
+          type: questionFormData.type || QType.SingleChoice,
+          points: questionFormData.points || 10,
+          sortOrder: questionFormData.sortOrder || (selectedQuizDetail?.questions.length || 0) + 1,
+          imageUrl: null,
+          answers: answers,
+        }
+
+        await createQuestion(questionData)
+      }
 
       // Refresh quiz detail
       const res = await quizService.getQuizDetail(selectedQuiz.id)
@@ -275,6 +374,7 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
       }
 
       // Reset form
+      setEditingQuestion(null)
       setQuestionFormData({
         quizId: selectedQuiz.id,
         questionText: '',
@@ -292,6 +392,152 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
       ])
     } catch (error: any) {
       toast.error(error?.message || 'Có lỗi xảy ra khi thêm câu hỏi')
+    }
+  }
+
+  const handleEditQuestion = (question: any) => {
+    setEditingQuestion(question)
+    setQuestionFormData({
+      quizId: question.quizId,
+      questionText: question.questionText,
+      explanation: question.explanation || '',
+      type: question.type,
+      points: question.points,
+      sortOrder: question.sortOrder,
+      answers: [],
+    })
+
+    // Set answer options from existing answers
+    if (question.answers && question.answers.length > 0) {
+      const options = question.answers.map((answer: any) => ({
+        text: answer.answerText,
+        isCorrect: answer.isCorrect,
+      }))
+      setAnswerOptions(options)
+    } else {
+      setAnswerOptions([
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+        { text: '', isCorrect: false },
+      ])
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingQuestion(null)
+    setQuestionFormData({
+      quizId: selectedQuiz?.id || '',
+      questionText: '',
+      explanation: '',
+      type: QType.SingleChoice,
+      points: 10,
+      sortOrder: 0,
+      answers: [],
+    })
+    setAnswerOptions([
+      { text: '', isCorrect: false },
+      { text: '', isCorrect: false },
+      { text: '', isCorrect: false },
+      { text: '', isCorrect: false },
+    ])
+  }
+
+  const handleGenerateQuizWithAI = async () => {
+    // Validation
+    if (!aiFormData.courseId) {
+      toast.error('Vui lòng chọn Course')
+      return
+    }
+    if (!aiFormData.chapterId) {
+      toast.error('Vui lòng chọn Chapter')
+      return
+    }
+    if (!aiFormData.lessonId) {
+      toast.error('Vui lòng chọn Lesson')
+      return
+    }
+    if (!aiFormData.courseInfo.trim()) {
+      toast.error('Vui lòng nhập thông tin về khóa học')
+      return
+    }
+    if (!aiFormData.topic.trim()) {
+      toast.error('Vui lòng nhập chủ đề quiz')
+      return
+    }
+
+    setIsGenerating(true)
+    try {
+      const requestData = {
+        courseId: aiFormData.courseId,
+        lessonId: aiFormData.lessonId,
+        chapterId: aiFormData.chapterId,
+        courseInfo: aiFormData.courseInfo,
+        numberOfQuestions: aiFormData.numberOfQuestions,
+        difficulty: aiFormData.difficulty,
+        topic: aiFormData.topic,
+      }
+
+      const response = await quizService.generateQuizWithAI(requestData)
+
+      if (response.isSuccess) {
+        toast.success('Tạo quiz với AI thành công!')
+        setShowAIModal(false)
+        // Reset form
+        setAiFormData({
+          courseId: courseId || '',
+          lessonId: '',
+          chapterId: '',
+          courseInfo: '',
+          numberOfQuestions: 5,
+          difficulty: 'medium',
+          topic: '',
+        })
+        setAiLessons([])
+        setAiChapters([])
+        await refetchQuizzes()
+      } else {
+        throw new Error(response.error?.message || 'Không thể tạo quiz với AI')
+      }
+    } catch (error: any) {
+      console.error('Error generating quiz with AI:', error)
+      toast.error(error?.message || 'Có lỗi xảy ra khi tạo quiz với AI')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleReorderQuestions = async (questionId: string, direction: 'up' | 'down') => {
+    if (!selectedQuiz || !selectedQuizDetail) return
+
+    const questions = [...selectedQuizDetail.questions].sort((a, b) => a.sortOrder - b.sortOrder)
+    const currentIndex = questions.findIndex((q) => q.id === questionId)
+
+    if (currentIndex === -1) return
+
+    if (direction === 'up' && currentIndex === 0) return
+    if (direction === 'down' && currentIndex === questions.length - 1) return
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    const temp = questions[currentIndex].sortOrder
+    questions[currentIndex].sortOrder = questions[newIndex].sortOrder
+    questions[newIndex].sortOrder = temp
+
+    try {
+      const questionOrders = questions.map((q) => ({
+        questionId: q.id,
+        sortOrder: q.sortOrder,
+      }))
+
+      await quizService.reorderQuestions(selectedQuiz.id, questionOrders)
+
+      // Refresh quiz detail
+      const res = await quizService.getQuizDetail(selectedQuiz.id)
+      if (res.isSuccess && res.value) {
+        setSelectedQuizDetail(res.value)
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Có lỗi xảy ra khi sắp xếp lại câu hỏi')
     }
   }
 
@@ -391,13 +637,39 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
               </h1>
               <p className="text-slate-400 mt-1">Create and manage quizzes for your courses</p>
             </div>
-            <button
-              onClick={handleAdd}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700"
-            >
-              <Plus className="w-5 h-5" />
-              New Quiz
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleAdd}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700"
+              >
+                <Plus className="w-5 h-5" />
+                New Quiz
+              </button>
+              <button
+                onClick={() => {
+                  const currentCourseId = courseId || selectedCourseId || ''
+                  setAiFormData({
+                    courseId: currentCourseId,
+                    lessonId: '',
+                    chapterId: '',
+                    courseInfo: '',
+                    numberOfQuestions: 5,
+                    difficulty: 'medium',
+                    topic: '',
+                  })
+                  setAiLessons([])
+                  setAiChapters([])
+                  if (currentCourseId) {
+                    loadAiLessonsAndChapters(currentCourseId)
+                  }
+                  setShowAIModal(true)
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-700 hover:to-orange-700"
+              >
+                <Sparkles className="w-5 h-5" />
+                New Quiz with AI
+              </button>
+            </div>
           </div>
 
           {/* Filters */}
@@ -543,6 +815,36 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
               </div>
 
               <form onSubmit={handleSaveQuiz} className="p-6 space-y-4">
+                {!courseId && !editingQuiz && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Course <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      value={selectedCourseId}
+                      onChange={(e) => {
+                        setSelectedCourseId(e.target.value)
+                        if (e.target.value) {
+                          loadLessons(e.target.value)
+                        } else {
+                          setLessons([])
+                        }
+                        // Reset lesson selection when course changes
+                        setFormData((prev) => ({ ...prev, lessonId: '', lessonTitle: '' }))
+                      }}
+                      className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      required
+                    >
+                      <option value="">Chọn course</option>
+                      {courses?.map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {course.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Title <span className="text-red-400">*</span>
@@ -587,15 +889,20 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
                     }}
                     className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                     required
-                    disabled={!!editingQuiz}
+                    disabled={!!editingQuiz || (!courseId && !selectedCourseId)}
                   >
-                    <option value="">Chọn lesson</option>
+                    <option value="">
+                      {!courseId && !selectedCourseId ? 'Chọn course trước' : lessons.length === 0 ? 'Không có lesson nào' : 'Chọn lesson'}
+                    </option>
                     {lessons.map((lesson) => (
                       <option key={lesson.id} value={lesson.id}>
                         {lesson.title}
                       </option>
                     ))}
                   </select>
+                  {lessons.length === 0 && (courseId || selectedCourseId) && (
+                    <p className="text-sm text-slate-400 mt-1">Course này chưa có lesson nào</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -731,9 +1038,22 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
               </div>
 
               <div className="p-6">
-                {/* Add Question Form */}
+                {/* Add/Edit Question Form */}
                 <form onSubmit={handleAddQuestion} className="bg-slate-700/30 rounded-xl p-4 mb-6">
-                  <h4 className="text-lg font-semibold text-white mb-4">Add New Question</h4>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-white">
+                      {editingQuestion ? 'Chỉnh sửa Câu hỏi' : 'Thêm Câu hỏi mới'}
+                    </h4>
+                    {editingQuestion && (
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        className="text-slate-400 hover:text-white text-sm"
+                      >
+                        Hủy
+                      </button>
+                    )}
+                  </div>
 
                   <div className="space-y-4">
                     <div>
@@ -900,81 +1220,346 @@ const QuizContent: React.FC<QuizContentProps> = ({ courseId }) => {
                         </div>
                       )}
 
-                    <button
-                      type="submit"
-                      className="w-full px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg font-semibold hover:from-violet-700 hover:to-purple-700 transition"
-                    >
-                      Add Question
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        type="submit"
+                        className="flex-1 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg font-semibold hover:from-violet-700 hover:to-purple-700 transition"
+                      >
+                        {editingQuestion ? 'Cập nhật Câu hỏi' : 'Thêm Câu hỏi'}
+                      </button>
+                      {editingQuestion && (
+                        <button
+                          type="button"
+                          onClick={handleCancelEdit}
+                          className="px-6 py-3 bg-slate-700 text-slate-300 rounded-lg font-semibold hover:bg-slate-600 transition"
+                        >
+                          Hủy
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </form>
 
                 {/* Questions List */}
                 <div className="space-y-3">
-                  <h4 className="text-lg font-semibold text-white mb-4">Questions</h4>
+                  <h4 className="text-lg font-semibold text-white mb-4">
+                    Danh sách Câu hỏi ({selectedQuizDetail?.questions.length || 0})
+                  </h4>
                   {!selectedQuizDetail || selectedQuizDetail.questions.length === 0 ? (
                     <p className="text-slate-400 text-center py-8">
                       Chưa có câu hỏi nào. Thêm câu hỏi đầu tiên ở trên.
                     </p>
                   ) : (
-                    selectedQuizDetail.questions.map((question, index) => (
-                      <div
-                        key={question.id}
-                        className="bg-slate-700/30 rounded-lg p-4 hover:bg-slate-700/50 transition"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="bg-violet-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
-                                {index + 1}
-                              </span>
-                              <h5 className="text-white font-medium">{question.questionText}</h5>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-slate-400 ml-11">
-                              <span className="capitalize">
-                                {question.type === QType.SingleChoice && 'Single Choice'}
-                                {question.type === QType.MultipleChoice && 'Multiple Choice'}
-                                {question.type === QType.TrueFalse && 'True/False'}
-                                {question.type === QType.ShortAnswer && 'Short Answer'}
-                                {question.type === QType.Essay && 'Essay'}
-                              </span>
-                              <span>•</span>
-                              <span>{question.points} điểm</span>
-                            </div>
-                            {question.explanation && (
-                              <p className="text-slate-400 text-sm ml-11 mt-2 italic">
-                                Giải thích: {question.explanation}
-                              </p>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => handleDeleteQuestion(question.id)}
-                            className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        {question.answers && question.answers.length > 0 && (
-                          <div className="ml-11 grid grid-cols-2 gap-2">
-                            {question.answers.map((answer, optIndex) => (
-                              <div
-                                key={answer.id}
-                                className={`px-3 py-2 rounded text-sm ${answer.isCorrect
-                                  ? 'bg-green-500/20 text-green-300 border border-green-500/50'
-                                  : 'bg-slate-600/30 text-slate-400'
-                                  }`}
-                              >
-                                {answer.isCorrect && (
-                                  <CheckCircle className="w-3 h-3 inline mr-1" />
-                                )}
-                                {answer.answerText}
+                    [...selectedQuizDetail.questions]
+                      .sort((a, b) => a.sortOrder - b.sortOrder)
+                      .map((question, index) => (
+                        <div
+                          key={question.id}
+                          className="bg-slate-700/30 rounded-lg p-4 hover:bg-slate-700/50 transition"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="bg-violet-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
+                                  {index + 1}
+                                </span>
+                                <h5 className="text-white font-medium">{question.questionText}</h5>
                               </div>
-                            ))}
+                              <div className="flex items-center gap-4 text-sm text-slate-400 ml-11">
+                                <span className="capitalize">
+                                  {question.type === QType.SingleChoice && 'Single Choice'}
+                                  {question.type === QType.MultipleChoice && 'Multiple Choice'}
+                                  {question.type === QType.TrueFalse && 'True/False'}
+                                  {question.type === QType.ShortAnswer && 'Short Answer'}
+                                  {question.type === QType.Essay && 'Essay'}
+                                </span>
+                                <span>•</span>
+                                <span>{question.points} điểm</span>
+                                {question.answers && question.answers.length > 0 && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{question.answers.length} đáp án</span>
+                                  </>
+                                )}
+                              </div>
+                              {question.explanation && (
+                                <p className="text-slate-400 text-sm ml-11 mt-2 italic">
+                                  Giải thích: {question.explanation}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="flex flex-col gap-1">
+                                <button
+                                  onClick={() => handleReorderQuestions(question.id, 'up')}
+                                  disabled={index === 0}
+                                  className="p-1 bg-slate-600/50 hover:bg-slate-600 rounded transition text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                                  title="Di chuyển lên"
+                                >
+                                  <ChevronUp className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleReorderQuestions(question.id, 'down')}
+                                  disabled={index === (selectedQuizDetail?.questions.length || 0) - 1}
+                                  className="p-1 bg-slate-600/50 hover:bg-slate-600 rounded transition text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                                  title="Di chuyển xuống"
+                                >
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
+                              </div>
+                              <button
+                                onClick={() => handleEditQuestion(question)}
+                                className="p-2 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition text-blue-400"
+                                title="Chỉnh sửa"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteQuestion(question.id)}
+                                className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition text-red-400"
+                                title="Xóa"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    ))
+                          {question.answers && question.answers.length > 0 && (
+                            <div className="ml-11 grid grid-cols-2 gap-2">
+                              {question.answers.map((answer, optIndex) => (
+                                <div
+                                  key={answer.id}
+                                  className={`px-3 py-2 rounded text-sm ${answer.isCorrect
+                                    ? 'bg-green-500/20 text-green-300 border border-green-500/50'
+                                    : 'bg-slate-600/30 text-slate-400'
+                                    }`}
+                                >
+                                  {answer.isCorrect && (
+                                    <CheckCircle className="w-3 h-3 inline mr-1" />
+                                  )}
+                                  {answer.answerText}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI Generate Quiz Modal */}
+        {showAIModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-6 h-6 text-amber-400" />
+                  <h3 className="text-xl font-bold text-white">Tạo Quiz với AI</h3>
+                </div>
+                <button
+                  onClick={() => setShowAIModal(false)}
+                  disabled={isGenerating}
+                  className="p-2 hover:bg-slate-700 rounded-lg transition disabled:opacity-50"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-amber-300">
+                    AI sẽ tự động tạo quiz dựa trên thông tin bạn cung cấp. Vui lòng chọn đầy đủ Course, Chapter và Lesson.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Course <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={aiFormData.courseId}
+                    onChange={(e) => {
+                      const newCourseId = e.target.value
+                      const selectedCourse = courses.find((c: any) => c.id === newCourseId)
+                      
+                      setAiFormData((prev) => ({
+                        ...prev,
+                        courseId: newCourseId,
+                        lessonId: '',
+                        chapterId: '',
+                        courseInfo: selectedCourse?.description || prev.courseInfo,
+                      }))
+                      
+                      if (newCourseId) {
+                        loadAiLessonsAndChapters(newCourseId)
+                      } else {
+                        setAiLessons([])
+                        setAiChapters([])
+                      }
+                    }}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                    disabled={isGenerating}
+                  >
+                    <option value="">Chọn course</option>
+                    {courses.map((course: any) => (
+                      <option key={course.id} value={course.id}>
+                        {course.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {aiChapters.length > 0 ? (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Chapter <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      value={aiFormData.chapterId}
+                      onChange={(e) => setAiFormData((prev) => ({ ...prev, chapterId: e.target.value, lessonId: '' }))}
+                      className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                      disabled={isGenerating || !aiFormData.courseId}
+                    >
+                      <option value="">Chọn chapter</option>
+                      {aiChapters.map((chapter) => (
+                        <option key={chapter.id} value={chapter.id}>
+                          {chapter.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : aiFormData.courseId ? (
+                  <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-3">
+                    <p className="text-sm text-slate-400">Không có chapter nào trong course này</p>
+                  </div>
+                ) : null}
+
+                {aiLessons.length > 0 ? (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Lesson <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      value={aiFormData.lessonId}
+                      onChange={(e) => setAiFormData((prev) => ({ ...prev, lessonId: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                      disabled={isGenerating || !aiFormData.courseId || !aiFormData.chapterId}
+                    >
+                      <option value="">Chọn lesson</option>
+                      {aiLessons
+                        .filter((lesson) => !aiFormData.chapterId || lesson.chapterId === aiFormData.chapterId)
+                        .map((lesson) => (
+                          <option key={lesson.id} value={lesson.id}>
+                            {lesson.title}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                ) : aiFormData.courseId ? (
+                  <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-3">
+                    <p className="text-sm text-slate-400">
+                      {aiFormData.chapterId ? 'Không có lesson nào trong chapter này' : 'Vui lòng chọn chapter trước'}
+                    </p>
+                  </div>
+                ) : null}
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Course Info <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    value={aiFormData.courseInfo}
+                    onChange={(e) => setAiFormData((prev) => ({ ...prev, courseInfo: e.target.value }))}
+                    placeholder="This quiz focuses on Laravel fundamentals including routing, controllers, Blade templates, and database migrations."
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                    required
+                    disabled={isGenerating}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Topic <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={aiFormData.topic}
+                      onChange={(e) => setAiFormData((prev) => ({ ...prev, topic: e.target.value }))}
+                      placeholder="Laravel Basics"
+                      className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                      disabled={isGenerating}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Number of Questions <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={aiFormData.numberOfQuestions}
+                      onChange={(e) => setAiFormData((prev) => ({ ...prev, numberOfQuestions: Number(e.target.value) }))}
+                      min="1"
+                      max="50"
+                      className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      required
+                      disabled={isGenerating}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Difficulty <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={aiFormData.difficulty}
+                    onChange={(e) => setAiFormData((prev) => ({ ...prev, difficulty: e.target.value as 'easy' | 'medium' | 'hard' }))}
+                    className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                    disabled={isGenerating}
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={handleGenerateQuizWithAI}
+                    disabled={isGenerating}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg font-semibold hover:from-amber-700 hover:to-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Đang tạo quiz với AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        <span>Generate Quiz</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAIModal(false)}
+                    disabled={isGenerating}
+                    className="px-6 py-3 bg-slate-700 text-slate-300 rounded-lg font-medium hover:bg-slate-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Hủy
+                  </button>
                 </div>
               </div>
             </div>

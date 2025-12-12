@@ -1,4 +1,4 @@
-import { BookOpen, ChevronLeft, ClipboardList, Clock, Edit2, FileText, HelpCircle, Plus, Search, Trash2, Video, X } from 'lucide-react'
+import { BookOpen, ChevronLeft, ClipboardList, Clock, Edit2, Eye, FileText, HelpCircle, Plus, Search, Trash2, Upload, Video, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { courseInstructorService } from '~/module/instructor/services/CourseInstructorApi'
 import { useConfirmDialog } from '~/shared/hooks/useConfirmDialog'
@@ -36,6 +36,9 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
   const [selectedChapter, setSelectedChapter] = useState<string>('all')
   const [showModal, setShowModal] = useState(false)
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null)
+  const [viewingLesson, setViewingLesson] = useState<Lesson | null>(null)
+  const [lessonDetail, setLessonDetail] = useState<any>(null)
+  const [loadingDetail, setLoadingDetail] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -47,6 +50,9 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
     chapterId: '',
     isFree: false,
   })
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     loadLessons()
@@ -207,6 +213,9 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
       chapterId: '',
       isFree: false,
     })
+    setVideoFile(null)
+    setUploadProgress(0)
+    setIsUploading(false)
     setShowModal(true)
   }
 
@@ -223,6 +232,9 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
       chapterId: lesson.chapterId || '',
       isFree: lesson.isFree,
     })
+    setVideoFile(null)
+    setUploadProgress(0)
+    setIsUploading(false)
     setShowModal(true)
   }
 
@@ -242,11 +254,55 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
     }
   }
 
+  const handleView = async (lesson: Lesson) => {
+    setViewingLesson(lesson)
+    setLoadingDetail(true)
+    try {
+      // Try to get detailed lesson info
+      const detail = await courseInstructorService.getLessonDetail(lesson.id)
+      const detailData = detail?.isSuccess ? detail.value : detail
+      setLessonDetail(detailData || lesson)
+    } catch (error: any) {
+      // If detail API fails, use the lesson data we already have
+      console.warn('Could not load lesson detail:', error)
+      setLessonDetail(lesson)
+    } finally {
+      setLoadingDetail(false)
+    }
+  }
+
+  const handleBackToList = () => {
+    setViewingLesson(null)
+    setLessonDetail(null)
+  }
+
+  const handleVideoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      const validTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/wmv', 'video/flv', 'video/webm']
+      if (!validTypes.includes(file.type)) {
+        toast.error('Định dạng video không hợp lệ. Vui lòng chọn file MP4, MOV, AVI, WMV, FLV hoặc WEBM')
+        return
+      }
+
+      // Validate file size (max 2GB)
+      const maxSize = 2 * 1024 * 1024 * 1024 // 2GB
+      if (file.size > maxSize) {
+        toast.error('File video quá lớn. Kích thước tối đa là 2GB')
+        return
+      }
+
+      setVideoFile(file)
+    }
+  }
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
 
     try {
       if (editingLesson) {
+        // Update lesson - không hỗ trợ upload video khi edit (có thể thêm sau)
         const updateData = {
           id: editingLesson.id,
           title: formData.title,
@@ -255,7 +311,7 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
           videoDuration: formData.duration * 60, // Convert minutes to seconds
           type: formData.type,
           sortOrder: formData.order,
-          isPublished: false, // Can be added to formData later
+          isPublished: false,
           isPreview: formData.isFree,
           resources: undefined,
         }
@@ -268,62 +324,116 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
           )
         )
         toast.success('Cập nhật lesson thành công!')
+        setShowModal(false)
+        loadLessons()
       } else {
+        // Create lesson - gửi FormData với video file (nếu có)
         if (!formData.chapterId) {
           toast.error('Vui lòng chọn chapter')
           return
         }
-        const createData = {
-          chapterId: formData.chapterId,
-          title: formData.title,
-          content: formData.content,
-          videoUrl: formData.videoUrl || undefined,
-          videoDuration: formData.duration * 60, // Convert minutes to seconds
-          type: formData.type,
-          sortOrder: formData.order,
-          isPreview: formData.isFree,
-          resources: undefined,
+
+        setIsUploading(true)
+        setUploadProgress(0)
+
+        const formDataToSend = new FormData()
+
+        // Required fields
+        formDataToSend.append('ChapterId', formData.chapterId)
+        formDataToSend.append('Title', formData.title)
+
+        // Optional fields
+        if (formData.content) {
+          formDataToSend.append('Content', formData.content)
         }
-        const newLesson = await courseInstructorService.createLesson(createData)
-        // Handle API response
-        const lesson = newLesson?.isSuccess ? newLesson.value : newLesson
-        setLessons((prev) => [
-          ...prev,
-          {
-            id: lesson?.id || Date.now().toString(),
-            courseId,
-            ...formData,
-            createdAt: new Date().toISOString(),
-          },
-        ])
-        toast.success('Tạo lesson thành công!')
-      }
-      setShowModal(false)
-      loadLessons()
-    } catch (error: any) {
-      toast.error(error?.message || 'Có lỗi xảy ra')
-      // For development, update local state
-      if (editingLesson) {
-        setLessons((prev) =>
-          prev.map((l) =>
-            l.id === editingLesson.id
-              ? { ...l, ...formData, updatedAt: new Date().toISOString() }
-              : l
+
+        if (formData.type) {
+          formDataToSend.append('Type', formData.type.toString())
+        }
+
+        if (formData.order) {
+          formDataToSend.append('SortOrder', formData.order.toString())
+        }
+
+        formDataToSend.append('IsPreview', formData.isFree.toString())
+
+        // Nếu có video file, gửi kèm với YouTube metadata
+        if (videoFile) {
+          formDataToSend.append('VideoFile', videoFile)
+
+          // YouTube metadata
+          if (formData.description || formData.content) {
+            formDataToSend.append('YouTubeDescription', formData.description || formData.content)
+          }
+
+          formDataToSend.append('YouTubeTags', 'education,course,lesson')
+          formDataToSend.append('YouTubePrivacyStatus', 'unlisted')
+          formDataToSend.append('YouTubeCategoryId', '27') // Education
+        } else if (formData.videoUrl) {
+          // Nếu không có file nhưng có URL, chỉ lưu URL
+          // Backend sẽ không upload lên YouTube
+        }
+
+        try {
+          const newLesson = await courseInstructorService.createLesson(
+            formDataToSend,
+            (progress) => {
+              setUploadProgress(progress)
+            }
           )
-        )
-      } else {
-        setLessons((prev) => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            courseId,
-            ...formData,
-            createdAt: new Date().toISOString(),
-          },
-        ])
+
+          // Handle API response
+          const lesson = newLesson?.isSuccess ? newLesson.value : newLesson
+
+          // Update formData với videoUrl từ response (nếu có)
+          if (lesson?.videoUrl) {
+            setFormData((prev) => ({
+              ...prev,
+              videoUrl: lesson.videoUrl,
+            }))
+
+            // Update duration nếu có
+            if (lesson.videoDuration) {
+              setFormData((prev) => ({
+                ...prev,
+                duration: Math.round(lesson.videoDuration / 60), // Convert seconds to minutes
+              }))
+            }
+          }
+
+          setLessons((prev) => [
+            ...prev,
+            {
+              id: lesson?.id || Date.now().toString(),
+              courseId,
+              chapterId: formData.chapterId,
+              title: formData.title,
+              description: formData.description,
+              content: formData.content,
+              videoUrl: lesson?.videoUrl || formData.videoUrl,
+              duration: lesson?.videoDuration ? Math.round(lesson.videoDuration / 60) : formData.duration,
+              order: formData.order,
+              type: formData.type,
+              isFree: formData.isFree,
+              createdAt: new Date().toISOString(),
+            },
+          ])
+
+          toast.success('Tạo lesson thành công!')
+          setShowModal(false)
+          setVideoFile(null)
+          setUploadProgress(0)
+          loadLessons()
+        } catch (error: any) {
+          throw error
+        } finally {
+          setIsUploading(false)
+        }
       }
-      setShowModal(false)
-      toast.success(editingLesson ? 'Cập nhật lesson thành công!' : 'Tạo lesson thành công!')
+    } catch (error: any) {
+      console.error('Error saving lesson:', error)
+      const errorMessage = error?.message || 'Có lỗi xảy ra khi tạo lesson'
+      toast.error(errorMessage)
     }
   }
 
@@ -364,6 +474,164 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
           <div className="text-center text-white py-12">
             <p>Đang tải lessons...</p>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Lesson Detail View
+  if (viewingLesson) {
+    const lesson = lessonDetail || viewingLesson
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Back Button */}
+          <button
+
+            onClick={handleBackToList}
+            className="flex items-center gap-2 text-slate-400 hover:text-violet-400 transition mb-6"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            Quay lại danh sách lessons
+          </button>
+
+          {loadingDetail ? (
+            <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-12 text-center">
+              <div className="text-white py-12">
+                <p>Đang tải chi tiết lesson...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 shadow-md p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      {getTypeIcon(lesson.type)}
+                      <h1 className="text-2xl font-bold text-white">{lesson.title}</h1>
+                      {lesson.isFree && (
+                        <span className="px-3 py-1 bg-green-500/20 text-green-300 text-xs font-medium rounded-full">
+                          Miễn phí
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-slate-400 ml-8">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {lesson.duration} phút
+                      </span>
+                      <span>•</span>
+                      <span>{getTypeName(lesson.type)}</span>
+                      {lesson.chapterId && (
+                        <>
+                          <span>•</span>
+                          <span className="text-violet-400">
+                            {chapters.find((c) => c.id === lesson.chapterId)?.title || 'Chapter'}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        handleBackToList()
+                        handleEdit(lesson)
+                      }}
+                      className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg transition text-slate-300 hover:text-white flex items-center gap-2"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Chỉnh sửa
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {lesson.description && (
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6">
+                  <h2 className="text-lg font-semibold text-white mb-3">Mô tả</h2>
+                  <p className="text-slate-300 leading-relaxed">{lesson.description}</p>
+                </div>
+              )}
+
+              {/* Content */}
+              {lesson.content && (
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6">
+                  <h2 className="text-lg font-semibold text-white mb-3">Nội dung</h2>
+                  <div className="text-slate-300 leading-relaxed whitespace-pre-wrap">{lesson.content}</div>
+                </div>
+              )}
+
+              {/* Video */}
+              {lesson.videoUrl && (
+                <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6">
+                  <h2 className="text-lg font-semibold text-white mb-4">Video</h2>
+                  <div className="aspect-video bg-slate-900 rounded-lg overflow-hidden">
+                    {lesson.videoUrl.includes('youtube.com') || lesson.videoUrl.includes('youtu.be') ? (
+                      <iframe
+                        src={lesson.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                        title={lesson.title}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video
+                        src={lesson.videoUrl}
+                        controls
+                        className="w-full h-full"
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata */}
+              <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">Thông tin</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">Loại</p>
+                    <p className="text-white font-medium">{getTypeName(lesson.type)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">Thời lượng</p>
+                    <p className="text-white font-medium">{lesson.duration} phút</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">Thứ tự</p>
+                    <p className="text-white font-medium">{lesson.order}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">Trạng thái</p>
+                    <p className="text-white font-medium">
+                      {lesson.isFree ? 'Miễn phí' : 'Có phí'}
+                    </p>
+                  </div>
+                  {lesson.createdAt && (
+                    <div>
+                      <p className="text-sm text-slate-400 mb-1">Ngày tạo</p>
+                      <p className="text-white font-medium text-sm">
+                        {new Date(lesson.createdAt).toLocaleDateString('vi-VN')}
+                      </p>
+                    </div>
+                  )}
+                  {lesson.updatedAt && (
+                    <div>
+                      <p className="text-sm text-slate-400 mb-1">Cập nhật lần cuối</p>
+                      <p className="text-white font-medium text-sm">
+                        {new Date(lesson.updatedAt).toLocaleDateString('vi-VN')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -502,14 +770,23 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
                   </div>
                   <div className="flex gap-2">
                     <button
+                      onClick={() => handleView(lesson)}
+                      className="p-2 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition text-blue-400"
+                      title="Xem chi tiết"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => handleEdit(lesson)}
                       className="p-2 bg-slate-700/50 hover:bg-slate-600 rounded-lg transition text-slate-300 hover:text-white"
+                      title="Chỉnh sửa"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(lesson.id)}
                       className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition text-red-400"
+                      title="Xóa"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -620,10 +897,118 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                {/* Video Upload Section - Only show for Video type */}
+                {formData.type === 1 && (
+                  <div className="border border-slate-600 rounded-lg p-4 bg-slate-700/30">
+                    <label className="block text-sm font-medium text-slate-300 mb-3">
+                      Video File (sẽ tự động upload lên YouTube khi tạo lesson)
+                    </label>
+
+                    {!videoFile && !formData.videoUrl && (
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="video/mp4,video/mov,video/avi,video/wmv,video/flv,video/webm"
+                          onChange={handleVideoFileSelect}
+                          className="hidden"
+                          disabled={isUploading}
+                        />
+                        <div className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-600 rounded-lg hover:border-violet-500 transition text-slate-300 hover:text-violet-400">
+                          <Upload className="w-5 h-5" />
+                          <span>Chọn file video</span>
+                        </div>
+                      </label>
+                    )}
+
+                    {videoFile && (
+                      <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Video className="w-5 h-5 text-violet-400" />
+                          <span className="text-sm text-slate-300">{videoFile.name}</span>
+                          <span className="text-xs text-slate-500">
+                            ({(videoFile.size / (1024 * 1024)).toFixed(2)} MB)
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setVideoFile(null)}
+                          disabled={isUploading}
+                          className="text-red-400 hover:text-red-300 disabled:opacity-50"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    {isUploading && (
+                      <div className="space-y-3 mt-3">
+                        <div className="flex items-center justify-between text-sm text-slate-300 mb-2">
+                          <span>Đang tạo lesson và upload video...</span>
+                          <span>{uploadProgress.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-slate-700 rounded-full h-2.5">
+                          <div
+                            className="bg-gradient-to-r from-violet-600 to-purple-600 h-2.5 rounded-full transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-xs text-slate-400">
+                          Vui lòng không đóng cửa sổ này trong lúc upload...
+                        </p>
+                      </div>
+                    )}
+
+                    {formData.videoUrl && !videoFile && !isUploading && (
+                      <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Video className="w-5 h-5 text-green-400" />
+                          <a
+                            href={formData.videoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-green-400 hover:underline"
+                          >
+                            Video URL đã có
+                          </a>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, videoUrl: '' }))}
+                          className="text-slate-400 hover:text-slate-300"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="mt-3 pt-3 border-t border-slate-600">
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Hoặc nhập Video URL thủ công (nếu video đã có trên YouTube)
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.videoUrl}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, videoUrl: e.target.value }))
+                        }
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        disabled={isUploading || !!videoFile}
+                        className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
+                      />
+                      {videoFile && (
+                        <p className="text-xs text-slate-400 mt-1">
+                          Vui lòng xóa file video trước nếu muốn dùng URL thủ công
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Video URL for non-video types */}
+                {formData.type !== 1 && (
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Video URL
+                      Video URL (tùy chọn)
                     </label>
                     <input
                       type="url"
@@ -635,6 +1020,9 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
                       className="w-full px-4 py-3 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
                     />
                   </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
 
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -686,14 +1074,23 @@ const LessonsContent: React.FC<LessonsContentProps> = ({ courseId, courseName, o
                 <div className="flex gap-3 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg font-semibold hover:from-violet-700 hover:to-purple-700 transition"
+                    disabled={isUploading}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg font-semibold hover:from-violet-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {editingLesson ? 'Cập nhật' : 'Tạo'} Lesson
+                    {isUploading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Đang tạo lesson...</span>
+                      </>
+                    ) : (
+                      <span>{editingLesson ? 'Cập nhật' : 'Tạo'} Lesson</span>
+                    )}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="px-6 py-3 bg-slate-700 text-slate-300 rounded-lg font-medium hover:bg-slate-600 transition"
+                    disabled={isUploading}
+                    className="px-6 py-3 bg-slate-700 text-slate-300 rounded-lg font-medium hover:bg-slate-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Hủy
                   </button>

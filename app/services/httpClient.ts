@@ -1,9 +1,27 @@
 import axios from 'axios'
 import { authService } from '~/module/auth/services/auth'
 
+/**
+ * Lấy baseURL cho API, đảm bảo dùng http cho localhost
+ */
+export const getApiBaseURL = (): string => {
+  let baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7151/api'
+
+  // Đảm bảo sử dụng http cho localhost (không phải https)
+  if (baseURL.includes('localhost') && baseURL.startsWith('https://')) {
+    baseURL = baseURL.replace('https://', 'http://')
+  }
+
+  // Đảm bảo có /api suffix
+  if (!baseURL.endsWith('/api')) {
+    baseURL = baseURL.endsWith('/') ? `${baseURL}api` : `${baseURL}/api`
+  }
+
+  return baseURL
+}
+
 const httpClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://localhost:7151/api',
-  // baseURL: import.meta.env.VITE_API_BASE_URL || 'https://localhost:5163/api',
+  baseURL: getApiBaseURL(),
   headers: { 'Content-Type': 'application/json' }
 })
 
