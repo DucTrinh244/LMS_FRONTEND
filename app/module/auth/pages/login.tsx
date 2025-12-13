@@ -88,29 +88,15 @@ const Login: React.FC = () => {
 
       toast.success('Login successfully !')
 
-      // Đợi một chút để state update
-      setTimeout(() => {
-        // Lấy user từ localStorage (vì context có thể chưa update kịp)
-        const accessToken = localStorage.getItem('accessToken');
-        if (accessToken) {
-          // Gọi getProfile để lấy thông tin user mới nhất
-          import('~/module/auth/services/auth').then(({ authService }) => {
-            authService.getProfile().then(res => {
-              const userRole = res.user.roles[0];
-
-              // Nếu có trang muốn truy cập trước đó và không phải login
-              if (from && from !== '/login' && from !== '/register') {
-                navigate(from, { replace: true });
-              } else {
-                console.log('User role after login:', userRole);
-                // Navigate đến dashboard theo role
-                const dashboardPath = getDashboardByRole(userRole);
-                navigate(dashboardPath, { replace: true });
-              }
-            });
-          });
-        }
-      }, 100);
+      // Đợi một chút để AuthContext cập nhật user state
+      // useEffect sẽ tự động navigate khi user được set (xem dòng 42-47)
+      // Nếu có trang muốn truy cập trước đó, navigate ngay
+      if (from && from !== '/login' && from !== '/register') {
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 100);
+      }
+      // Nếu không có trang trước đó, useEffect sẽ tự động navigate đến dashboard
 
     } catch (error: any) {
       console.error('Login failed:', error);

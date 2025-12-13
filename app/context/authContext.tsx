@@ -65,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('accessToken', res.value.accessToken)
       localStorage.setItem('refreshToken', res.value.refreshToken)
 
+      // Set user từ login response trước (để có thông tin cơ bản ngay lập tức)
       const userContext: UserContext = {
         id: res.value.id,
         email: res.value.email,
@@ -80,6 +81,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser(userContext)
+
+      // Sau đó gọi getProfile để cập nhật thông tin đầy đủ và mới nhất
+      try {
+        const profileRes = await authService.getProfile()
+        if (profileRes && profileRes.value) {
+          const updatedUserContext: UserContext = {
+            id: profileRes.value.id,
+            email: profileRes.value.email,
+            firstName: profileRes.value.firstName,
+            lastName: profileRes.value.lastName,
+            fullName: profileRes.value.fullName,
+            avatarUrl: profileRes.value.avatarUrl,
+            phone: profileRes.value.phone,
+            gender: profileRes.value.gender,
+            emailVerified: profileRes.value.emailVerified,
+            isActive: profileRes.value.isActive,
+            roles: profileRes.value.roles
+          }
+          setUser(updatedUserContext)
+          console.log('✅ Profile updated after login:', updatedUserContext)
+        }
+      } catch (error) {
+        console.error('⚠️ Failed to fetch profile after login, using login response data:', error)
+        // Nếu getProfile fail, vẫn giữ user từ login response
+      }
     } else {
       throw new Error(res.error?.message)
     }
@@ -92,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('accessToken', res.value.accessToken)
       localStorage.setItem('refreshToken', res.value.refreshToken)
 
+      // Set user từ register response trước (để có thông tin cơ bản ngay lập tức)
       const userContext: UserContext = {
         id: res.value.id,
         email: res.value.email,
@@ -107,6 +134,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser(userContext)
+
+      // Sau đó gọi getProfile để cập nhật thông tin đầy đủ và mới nhất
+      try {
+        const profileRes = await authService.getProfile()
+        if (profileRes && profileRes.value) {
+          const updatedUserContext: UserContext = {
+            id: profileRes.value.id,
+            email: profileRes.value.email,
+            firstName: profileRes.value.firstName,
+            lastName: profileRes.value.lastName,
+            fullName: profileRes.value.fullName,
+            avatarUrl: profileRes.value.avatarUrl,
+            phone: profileRes.value.phone,
+            gender: profileRes.value.gender,
+            emailVerified: profileRes.value.emailVerified,
+            isActive: profileRes.value.isActive,
+            roles: profileRes.value.roles
+          }
+          setUser(updatedUserContext)
+          console.log('✅ Profile updated after register:', updatedUserContext)
+        }
+      } catch (error) {
+        console.error('⚠️ Failed to fetch profile after register, using register response data:', error)
+        // Nếu getProfile fail, vẫn giữ user từ register response
+      }
     } else {
       throw new Error(res.error?.message)
     }
