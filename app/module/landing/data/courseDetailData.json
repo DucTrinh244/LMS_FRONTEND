@@ -1,0 +1,180 @@
+{
+  "course": {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "title": "The Complete Web Developer Course 2.0",
+    "shortDescription": "Learn Web Development by building 25 websites and mobile apps using HTML, CSS, Javascript, PHP, Python",
+    "description": "Embark on a comprehensive journey into AI with Mike Wheeler, your guide to this Udemy Best Seller course on ChatGPT and Prompt Engineering. As an experienced instructor who has taught over 300,000 students, Mike unveils the secrets of developing your own custom GPTs, ensuring your skills shine in the next marketplace.\n\nThis course will get you familiar with Generative AI and the effective use of ChatGPT and is perfect for the beginner. You will also learn advanced prompting techniques to take your Prompt Engineering skills to the next level.",
+    "objectives": "Become a UX designer\nYou will be able to add UX designer to your CV\nBecome a UI designer\nBuild & test a full website design\nBuild & test a full mobile app",
+    "requirements": "You will need a copy of Adobe XD 2019 or above. A free trial can be downloaded from Adobe.\nNo previous design experience is needed.\nNo previous Adobe XD skills are needed.",
+    "image": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80",
+    "instructorName": "Nicole Brown",
+    "instructorAvatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80",
+    "rating": 4.5,
+    "reviews": 15,
+    "students": 32,
+    "price": 0,
+    "certificateEnabled": true
+  },
+  "chapters": [
+    {
+      "id": "chapter-1",
+      "title": "Getting Started",
+      "description": "Introduction to the course",
+      "sortOrder": 1,
+      "isPublished": true
+    },
+    {
+      "id": "chapter-2",
+      "title": "The Brief",
+      "description": "Understanding the project brief",
+      "sortOrder": 2,
+      "isPublished": true
+    },
+    {
+      "id": "chapter-3",
+      "title": "Wireframing Low Fidelity",
+      "description": "Creating wireframes",
+      "sortOrder": 3,
+      "isPublished": true
+    },
+    {
+      "id": "chapter-4",
+      "title": "Type, Color & Icon Introduction",
+      "description": "Design fundamentals",
+      "sortOrder": 4,
+      "isPublished": true
+    }
+  ],
+  "lessons": [
+    {
+      "id": "lesson-1",
+      "chapterId": "chapter-1",
+      "title": "Welcome to the Course",
+      "content": "Introduction video to the course",
+      "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "duration": 5,
+      "order": 1,
+      "type": 1,
+      "isPreview": true
+    },
+    {
+      "id": "lesson-2",
+      "chapterId": "chapter-1",
+      "title": "Course Overview",
+      "content": "Overview of what you'll learn",
+      "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "duration": 8,
+      "order": 2,
+      "type": 1,
+      "isPreview": false
+    },
+    {
+      "id": "lesson-3",
+      "chapterId": "chapter-1",
+      "title": "Setting Up Your Environment",
+      "content": "How to set up your development environment",
+      "duration": 12,
+      "order": 3,
+      "type": 2,
+      "isPreview": false
+    },
+    {
+      "id": "lesson-4",
+      "chapterId": "chapter-2",
+      "title": "Understanding the Brief",
+      "content": "Learn how to read and understand project briefs",
+      "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "duration": 10,
+      "order": 1,
+      "type": 1,
+      "isPreview": true
+    },
+    {
+      "id": "lesson-5",
+      "chapterId": "chapter-2",
+      "title": "Project Requirements",
+      "content": "Identifying project requirements",
+      "duration": 7,
+      "order": 2,
+      "type": 2,
+      "isPreview": false
+    },
+    {
+      "id": "lesson-6",
+      "chapterId": "chapter-3",
+      "title": "Introduction to Wireframing",
+      "content": "Learn the basics of wireframing",
+      "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "duration": 15,
+      "order": 1,
+      "type": 1,
+      "isPreview": false
+    },
+    {
+      "id": "lesson-7",
+      "chapterId": "chapter-3",
+      "title": "Creating Your First Wireframe",
+      "content": "Hands-on wireframing tutorial",
+      "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "duration": 20,
+      "order": 2,
+      "type": 1,
+      "isPreview": false
+    },
+    {
+      "id": "lesson-8",
+      "chapterId": "chapter-4",
+      "title": "Typography Basics",
+      "content": "Understanding typography in design",
+      "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "duration": 18,
+      "order": 1,
+      "type": 1,
+      "isPreview": false
+    },
+    {
+      "id": "lesson-9",
+      "chapterId": "chapter-4",
+      "title": "Color Theory",
+      "content": "Learn about color theory and application",
+      "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "duration": 14,
+      "order": 2,
+      "type": 1,
+      "isPreview": false
+    },
+    {
+      "id": "lesson-10",
+      "title": "Bonus: Advanced Techniques",
+      "content": "Advanced techniques and tips",
+      "videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "duration": 25,
+      "order": 1,
+      "type": 1,
+      "isPreview": false
+    }
+  ],
+  "quizzes": [
+    {
+      "id": "quiz-1",
+      "title": "Getting Started Quiz",
+      "description": "Test your knowledge of the basics",
+      "timeLimit": 30,
+      "passingScore": 70,
+      "questionCount": 10,
+      "totalPoints": 100,
+      "isPublished": true
+    },
+    {
+      "id": "quiz-2",
+      "title": "Wireframing Quiz",
+      "description": "Wireframing assessment",
+      "timeLimit": 45,
+      "passingScore": 75,
+      "questionCount": 15,
+      "totalPoints": 150,
+      "isPublished": true
+    }
+  ]
+}
+

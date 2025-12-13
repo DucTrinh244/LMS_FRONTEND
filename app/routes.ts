@@ -6,7 +6,7 @@ export default [
   // ============================================
   index('module/landing/pages/homePage.tsx'),
   route('courses', 'module/landing/pages/coursePage.tsx'),
-  route('course/detail', 'module/landing/pages/courseDetailPage.tsx'),
+  route('course/detail/:courseId', 'module/landing/pages/courseDetailPage.tsx'),
   route('course/category', 'module/landing/pages/CategoryGridPage.tsx'),
   route('instructors', 'module/landing/pages/InstructorGridPage.tsx'),
   route('instructor/detail', 'module/landing/pages/InstructorDetailPage.tsx'),
