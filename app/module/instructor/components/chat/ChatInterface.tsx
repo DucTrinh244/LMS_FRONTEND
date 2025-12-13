@@ -62,7 +62,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     data: messagesData,
     isLoading: loadingMessages
   } = useMessages(activeConversationId || '', !!activeConversationId)
-
   // Available users - empty by default, should be fetched from API if needed
   const [availableUsers] = useState<User[]>([])
 
@@ -263,12 +262,74 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }
 
   const handleCreateConversation = async (groupId: string) => {
-    // Group đã được tạo, chỉ cần refresh conversations và select
-    // Refresh conversations list
-    queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] })
+    // Group đã được tạo, cần refresh conversations và select
+    try {
+      // Fetch group info ngay để thêm vào cache
+      try {
+        const { chatService } = await import('~/module/instructor/services/ChatApi')
+        const groups = await chatService.getMyGroups()
+        const newGroup = groups.find(g => g.id === groupId)
 
-    // Auto-select the new conversation
-    selectConversation(groupId)
+        if (newGroup) {
+          // Thêm group vào cache ngay lập tức
+          queryClient.setQueryData(
+            ['chat', 'conversations'],
+            (old: Conversation[] | undefined) => {
+              // Kiểm tra xem group đã có trong cache chưa
+              const exists = old?.some(conv => conv.id === groupId)
+              if (exists) {
+                return old // Đã có rồi, không cần thêm
+              }
+
+              // Map group thành conversation format
+              const newConversation: Conversation = {
+                id: newGroup.id,
+                title: newGroup.name,
+                type: 'group',
+                participants: [], // Sẽ được load khi select
+                unreadCount: 0,
+                createdAt: newGroup.lastMessageAt,
+                updatedAt: newGroup.lastMessageAt,
+                isArchived: false,
+                name: newGroup.name,
+                description: newGroup.description || undefined,
+                ownerId: newGroup.ownerId,
+                isPrivate: newGroup.isPrivate,
+                lastMessageAt: newGroup.lastMessageAt,
+                memberCount: newGroup.memberCount
+              }
+
+              // Thêm vào đầu danh sách
+              return [newConversation, ...(old || [])]
+            }
+          )
+        }
+      } catch (error) {
+        console.error('Error fetching group info:', error)
+      }
+
+      // Refetch conversations để đảm bảo có đầy đủ thông tin
+      await queryClient.refetchQueries({ queryKey: ['chat', 'conversations'] })
+
+      // Auto-select the new conversation
+      selectConversation(groupId)
+
+      // Join SignalR group để nhận real-time messages
+      try {
+        const { signalRChatService } = await import('~/module/instructor/services/SignalRChatService')
+        if (signalRChatService.getConnectionState()) {
+          console.log('🔗 Joining newly created SignalR group:', groupId)
+          await signalRChatService.joinGroup(groupId)
+          console.log('✅ Successfully joined newly created SignalR group')
+        }
+      } catch (error) {
+        console.error('❌ Error joining SignalR group after creation:', error)
+      }
+    } catch (error) {
+      console.error('Error refreshing conversations after group creation:', error)
+      // Vẫn select conversation ngay cả khi refetch fail
+      selectConversation(groupId)
+    }
 
     setShowNewConversationModal(false)
   }
@@ -444,7 +505,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                         )}
                       </p>
                       {/* Add Member button - only for groups, next to member count */}
-                      {activeConversation.type === 'group' && (
+                      {activeConversation.type === 'group' && userRole === 'instructor' && (
                         <button
                           onClick={() => setShowAddMemberModal(true)}
                           className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 hover:text-violet-400 hover:bg-slate-700/50 rounded transition-colors"
@@ -516,7 +577,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       />
 
       {/* Add Member Modal - only show when group conversation is active */}
-      {activeConversation && activeConversation.type === 'group' && activeConversationId && (
+      {activeConversation && activeConversation.type === 'group' && activeConversationId && userRole === 'instructor' && (
         <AddMemberModal
           isOpen={showAddMemberModal}
           onClose={() => setShowAddMemberModal(false)}

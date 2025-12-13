@@ -26,8 +26,8 @@ export function useConversations(filters?: ChatFilters) {
       return chatService.getConversations(filters)
     },
     staleTime: 30 * 1000,
-    // refetchInterval: 60 * 1000,
-    refetchInterval: false,
+    refetchInterval: 60 * 1000,
+    // refetchInterval: false,
     retry: 2
   })
 }
@@ -40,8 +40,8 @@ export function useMessages(conversationId: string, enabled = true) {
     },
     enabled: !!conversationId && enabled,
     staleTime: 10 * 1000,
-    // refetchInterval: 5 * 1000,
-    refetchInterval: false,
+    refetchInterval: 5 * 1000,
+    // refetchInterval: false,
     retry: 2
   })
 }
@@ -213,6 +213,45 @@ export function useChat() {
                     ? { ...conv, lastMessage: message, updatedAt: message.sentAt }
                     : conv
                 )
+            )
+          })
+
+          // Handle group created event
+          signalRChatService.onGroupCreated((group: any) => {
+            console.log('📨 Received GroupCreated event from SignalR:', group)
+
+            // Check if group already exists in cache
+            queryClient.setQueryData(
+              CHAT_QUERY_KEYS.conversations,
+              (old: Conversation[] | undefined) => {
+                const exists = old?.some(conv => conv.id === group.id)
+                if (exists) {
+                  console.log('⚠️ Group already exists in cache:', group.id)
+                  return old // Already exists, don't add duplicate
+                }
+
+                // Map group to conversation format
+                const newConversation: Conversation = {
+                  id: group.id,
+                  title: group.name || group.title,
+                  type: 'group',
+                  participants: [], // Will be loaded when selected
+                  unreadCount: 0,
+                  createdAt: group.lastMessageAt || group.createdAt || new Date().toISOString(),
+                  updatedAt: group.lastMessageAt || group.updatedAt || new Date().toISOString(),
+                  isArchived: false,
+                  name: group.name,
+                  description: group.description || undefined,
+                  ownerId: group.ownerId,
+                  isPrivate: group.isPrivate || false,
+                  lastMessageAt: group.lastMessageAt,
+                  memberCount: group.memberCount || 0
+                }
+
+                console.log('✅ Adding new group to conversations cache:', newConversation)
+                // Add to beginning of list
+                return [newConversation, ...(old || [])]
+              }
             )
           })
         })
