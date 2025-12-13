@@ -254,6 +254,44 @@ export function useChat() {
               }
             )
           })
+
+          // Handle user joined group event
+          signalRChatService.onUserJoinedGroup((data: { groupId: string; userId: string }) => {
+            console.log('👤 User joined group:', data)
+            // Optionally refresh group members if this is the current group
+            // This will be handled by ChatInterface when needed
+          })
+
+          // Handle user left group event
+          signalRChatService.onUserLeftGroup((data: { groupId: string; userId: string }) => {
+            console.log('👤 User left group:', data)
+
+            // If current user left, refresh conversations to remove the group
+            if (data.userId === currentUserId) {
+              console.log('⚠️ Current user was removed from group:', data.groupId)
+              queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.conversations })
+              toast.error('Bạn đã bị xóa khỏi nhóm')
+            } else {
+              // Another user left, refresh group members if this is the active conversation
+              queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.messages(data.groupId) })
+            }
+          })
+
+          // Handle users added to group event
+          signalRChatService.onUsersAddedToGroup((data: { groupId: string; userIds: string[] }) => {
+            console.log('👥 Users added to group:', data)
+            // Refresh group members if this is the active conversation
+            queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.messages(data.groupId) })
+          })
+
+          // Handle reconnection - need to rejoin groups
+          signalRChatService.onConnectionStateChanged((isConnected: boolean) => {
+            if (isConnected) {
+              console.log('✅ SignalR reconnected, will rejoin active group if needed')
+              // The ChatInterface component will handle rejoining the active group
+              // We just need to notify it via a custom event or state
+            }
+          })
         })
         .catch((error) => {
           console.error('Failed to connect to SignalR:', error)

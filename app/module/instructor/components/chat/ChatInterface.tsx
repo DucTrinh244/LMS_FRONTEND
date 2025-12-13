@@ -68,32 +68,78 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // State to store conversation with members
   const [conversationWithMembers, setConversationWithMembers] = React.useState<Conversation | null>(null)
   const previousGroupIdRef = React.useRef<string | null>(null)
+  const currentGroupIdRef = React.useRef<string | null>(null) // Track current group for rejoin after reconnect
 
   // Get active conversation data
   const baseConversation = conversations.find(c => c.id === activeConversationId)
   const activeConversation = conversationWithMembers || baseConversation
   const messages = messagesData?.messages || []
 
-  // Leave previous group when switching conversations
+  // Leave previous group when switching conversations - DISABLED
+  // User will stay in all groups they've joined, no automatic leaving
   React.useEffect(() => {
-    const leavePreviousGroup = async () => {
-      if (previousGroupIdRef.current && previousGroupIdRef.current !== activeConversationId) {
-        try {
-          const { signalRChatService } = await import('~/module/instructor/services/SignalRChatService')
-          if (signalRChatService.getConnectionState()) {
-            console.log('🔌 Leaving previous SignalR group:', previousGroupIdRef.current)
-            await signalRChatService.leaveGroup(previousGroupIdRef.current)
-            console.log('✅ Left previous SignalR group')
+    // Just update refs without leaving previous group
+    previousGroupIdRef.current = activeConversationId && activeConversation?.type === 'group' ? activeConversationId : null
+    // Update current group ref for rejoin after reconnect
+    currentGroupIdRef.current = activeConversationId && activeConversation?.type === 'group' ? activeConversationId : null
+  }, [activeConversationId, activeConversation])
+
+  // Rejoin group after SignalR reconnects
+  React.useEffect(() => {
+    const rejoinGroupAfterReconnect = async () => {
+      const { signalRChatService } = await import('~/module/instructor/services/SignalRChatService')
+
+      // Subscribe to connection state changes
+      const unsubscribe = signalRChatService.onConnectionStateChanged(async (isConnected: boolean) => {
+        if (isConnected && currentGroupIdRef.current) {
+          // SignalR just reconnected and we have an active group
+          try {
+            console.log('🔄 SignalR reconnected, rejoining group:', currentGroupIdRef.current)
+            if (signalRChatService.getConnectionState()) {
+              await signalRChatService.joinGroup(currentGroupIdRef.current)
+              console.log('✅ Successfully rejoined group after reconnect:', currentGroupIdRef.current)
+            }
+          } catch (error: any) {
+            // Handle errors gracefully - user might not be a member anymore
+            const errorMessage = error?.message || ''
+            if (errorMessage.includes('not found') || errorMessage.includes('not a member') || errorMessage.includes('HubException')) {
+              console.log('ℹ️ User is not a member of the group anymore, clearing group ref:', currentGroupIdRef.current)
+              currentGroupIdRef.current = null
+              // Optionally refresh conversations to update UI
+              queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] })
+            } else {
+              console.error('❌ Error rejoining group after reconnect:', error)
+            }
           }
-        } catch (error) {
-          console.error('❌ Error leaving previous group:', error)
+        }
+      })
+
+      // Also check immediately if already connected and we have a group
+      if (signalRChatService.getConnectionState() && currentGroupIdRef.current) {
+        try {
+          console.log('🔗 SignalR already connected, ensuring group membership:', currentGroupIdRef.current)
+          await signalRChatService.joinGroup(currentGroupIdRef.current)
+          console.log('✅ Ensured group membership:', currentGroupIdRef.current)
+        } catch (error: any) {
+          // Handle errors gracefully
+          const errorMessage = error?.message || ''
+          if (errorMessage.includes('not found') || errorMessage.includes('not a member') || errorMessage.includes('HubException')) {
+            console.log('ℹ️ User is not a member of the group, clearing group ref:', currentGroupIdRef.current)
+            currentGroupIdRef.current = null
+          } else {
+            console.error('❌ Error ensuring group membership:', error)
+          }
         }
       }
-      previousGroupIdRef.current = activeConversationId && activeConversation?.type === 'group' ? activeConversationId : null
+
+      return unsubscribe
     }
 
-    leavePreviousGroup()
-  }, [activeConversationId, activeConversation])
+    const cleanup = rejoinGroupAfterReconnect()
+    return () => {
+      cleanup.then(unsubscribe => unsubscribe?.())
+    }
+  }, []) // Only run once on mount
 
   // Load conversation members when conversation is selected
   React.useEffect(() => {
@@ -190,11 +236,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           console.log('🔗 Joining SignalR group:', conversationId)
           await signalRChatService.joinGroup(conversationId)
           console.log('✅ Successfully joined SignalR group:', conversationId)
+          // Update current group ref for rejoin after reconnect
+          currentGroupIdRef.current = conversationId
         } else {
           console.warn('⚠️ SignalR not connected, cannot join group')
+          // Still update ref so we can join when it reconnects
+          currentGroupIdRef.current = conversationId
         }
-      } catch (error) {
-        console.error('❌ Error joining SignalR group:', error)
+      } catch (error: any) {
+        // Handle errors gracefully
+        const errorMessage = error?.message || ''
+        if (errorMessage.includes('not found') || errorMessage.includes('not a member') || errorMessage.includes('HubException')) {
+          console.log('ℹ️ User is not a member of the group, refreshing conversations:', conversationId)
+          // Refresh conversations to update UI (group might have been removed)
+          queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] })
+          currentGroupIdRef.current = null
+        } else {
+          console.error('❌ Error joining SignalR group:', error)
+        }
       }
 
       // Load group members
@@ -321,9 +380,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           console.log('🔗 Joining newly created SignalR group:', groupId)
           await signalRChatService.joinGroup(groupId)
           console.log('✅ Successfully joined newly created SignalR group')
+          // Update current group ref for rejoin after reconnect
+          currentGroupIdRef.current = groupId
+        } else {
+          // Still update ref so we can join when it reconnects
+          currentGroupIdRef.current = groupId
         }
-      } catch (error) {
-        console.error('❌ Error joining SignalR group after creation:', error)
+      } catch (error: any) {
+        // Handle errors gracefully (though this should rarely happen for newly created groups)
+        const errorMessage = error?.message || ''
+        if (errorMessage.includes('not found') || errorMessage.includes('not a member') || errorMessage.includes('HubException')) {
+          console.log('ℹ️ Could not join newly created group, will retry on reconnect:', groupId)
+          // Still update ref so we can join when it reconnects
+          currentGroupIdRef.current = groupId
+        } else {
+          console.error('❌ Error joining SignalR group after creation:', error)
+        }
       }
     } catch (error) {
       console.error('Error refreshing conversations after group creation:', error)

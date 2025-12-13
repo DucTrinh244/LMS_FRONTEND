@@ -271,12 +271,18 @@ export class SignalRChatService {
     await this.connection.invoke('JoinGroup', groupId)
   }
 
-  // Leave group
+  // Leave group - DISABLED
+  // This method is disabled to prevent users from leaving groups automatically
   async leaveGroup(groupId: string): Promise<void> {
-    if (!this.connection || !this.isConnected) {
-      throw new Error('Not connected to Chat Hub')
-    }
-    await this.connection.invoke('LeaveGroup', groupId)
+    // DISABLED: Leave group functionality is disabled
+    console.log('⚠️ leaveGroup is disabled, not leaving group:', groupId)
+    // Do nothing - user stays in the group
+    return Promise.resolve()
+    // Original code (disabled):
+    // if (!this.connection || !this.isConnected) {
+    //   throw new Error('Not connected to Chat Hub')
+    // }
+    // await this.connection.invoke('LeaveGroup', groupId)
   }
 
   // Create group

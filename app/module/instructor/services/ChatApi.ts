@@ -213,17 +213,21 @@ export const chatService = {
     return response.data.value ?? false
   },
 
-  // Leave group
+  // Leave group - DISABLED
+  // This method is disabled to prevent users from leaving groups
   leaveGroup: async (groupId: string): Promise<boolean> => {
-    const response = await httpClient.post<ApiResponse<boolean>>(
-      `/Chat/group/${groupId}/leave`
-    )
-
-    if (!response.data.isSuccess) {
-      throw new Error(response.data.error?.message || 'Failed to leave group')
-    }
-
-    return response.data.value ?? false
+    // DISABLED: Leave group functionality is disabled
+    console.log('⚠️ leaveGroup (REST API) is disabled, not leaving group:', groupId)
+    // Do nothing - user stays in the group
+    return Promise.resolve(false)
+    // Original code (disabled):
+    // const response = await httpClient.post<ApiResponse<boolean>>(
+    //   `/Chat/group/${groupId}/leave`
+    // )
+    // if (!response.data.isSuccess) {
+    //   throw new Error(response.data.error?.message || 'Failed to leave group')
+    // }
+    // return response.data.value ?? false
   },
 
   // Get my groups
