@@ -9,6 +9,7 @@ import type {
   Message,
   SendMessageRequest
 } from '~/module/instructor/types/Chat'
+import { useAuth } from '~/shared/hooks/useAuth'
 import { useToast } from '~/shared/hooks/useToast'
 
 const CHAT_QUERY_KEYS = {
@@ -25,8 +26,8 @@ export function useConversations(filters?: ChatFilters) {
       return chatService.getConversations(filters)
     },
     staleTime: 30 * 1000,
-    // COMMENTED FOR SIGNALR TESTING - Disable auto refetch for conversations
-    // refetchInterval: 60 * 1000, // Commented out
+    // refetchInterval: 60 * 1000,
+    refetchInterval: false,
     retry: 2
   })
 }
@@ -39,16 +40,18 @@ export function useMessages(conversationId: string, enabled = true) {
     },
     enabled: !!conversationId && enabled,
     staleTime: 10 * 1000,
-    // COMMENTED FOR SIGNALR TESTING - Disable auto refetch, use SignalR instead
-    refetchInterval: false, // Changed from 5 * 1000 to false
+    // refetchInterval: 5 * 1000,
+    refetchInterval: false,
     retry: 2
   })
 }
 
 export function useChat() {
   const { toast } = useToast()
+  const { user: authUser } = useAuth()
   const queryClient = useQueryClient()
   const signalRConnectedRef = useRef(false)
+  const currentUserId = authUser?.id
 
   // Connect to SignalR on mount
   useEffect(() => {
@@ -59,26 +62,38 @@ export function useChat() {
 
           // Setup real-time message handlers
           signalRChatService.onPrivateMessage((message) => {
+            const conversationId = message.conversationId || ''
             queryClient.setQueryData(
-              CHAT_QUERY_KEYS.messages(message.conversationId || ''),
+              CHAT_QUERY_KEYS.messages(conversationId),
               (old: any) => {
                 const existingMessages = old?.messages || []
-                // Check if there's a temp message from current user that should be replaced
-                // Temp messages have senderId === 'current-user' and id starting with 'temp-'
+
+                // FIRST: Check if message with same ID already exists (prevent duplicates)
+                const existingMessageById = existingMessages.find(
+                  (msg: Message) => msg.id === message.id
+                )
+
+                if (existingMessageById) {
+                  console.log('⚠️ Private message already exists with id:', message.id, '- SKIPPING DUPLICATE')
+                  return old // Don't add duplicate
+                }
+
+                // SECOND: Check if there's a temp message from current user that should be replaced
+                const isOwnMessage = message.senderId === currentUserId || message.senderId === 'current-user'
                 const tempMessageIndex = existingMessages.findIndex(
                   (msg: Message) =>
                     msg.id.startsWith('temp-') &&
-                    msg.senderId === 'current-user' &&
-                    msg.conversationId === message.conversationId
+                    (msg.senderId === 'current-user' || msg.senderId === currentUserId) &&
+                    msg.conversationId === conversationId &&
+                    isOwnMessage // Only replace if this is our own message
                 )
 
                 if (tempMessageIndex !== -1) {
+                  console.log('📨 Replacing temp private message at index:', tempMessageIndex)
                   // Replace temp message with real message from server
-                  // But preserve content from temp message if server message doesn't have it
                   const tempMessage = existingMessages[tempMessageIndex]
                   const finalMessage: Message = {
                     ...message,
-                    // Preserve content from temp message if server message content is empty
                     content: message.content || tempMessage.content || ''
                   }
                   const newMessages = [...existingMessages]
@@ -88,6 +103,7 @@ export function useChat() {
                     messages: newMessages
                   }
                 } else {
+                  console.log('📨 Adding new private message to list')
                   // No temp message found, add new message
                   return {
                     ...old,
@@ -109,44 +125,82 @@ export function useChat() {
           })
 
           signalRChatService.onGroupMessage((message) => {
+            console.log('📨 Received group message from SignalR:', {
+              id: message.id,
+              senderId: message.senderId,
+              content: message.content,
+              chatGroupId: message.chatGroupId,
+              conversationId: message.conversationId,
+              currentUserId
+            })
+
+            // Use chatGroupId as primary identifier for group messages
             const conversationId = message.conversationId || message.chatGroupId || ''
+            console.log('📨 Processing message for conversationId:', conversationId)
+
             queryClient.setQueryData(
               CHAT_QUERY_KEYS.messages(conversationId),
               (old: any) => {
                 const existingMessages = old?.messages || []
-                // Check if there's a temp message from current user that should be replaced
-                // Temp messages have senderId === 'current-user' and id starting with 'temp-'
-                // Match by conversationId or chatGroupId
-                const tempMessageIndex = existingMessages.findIndex(
-                  (msg: Message) =>
-                    msg.id.startsWith('temp-') &&
-                    msg.senderId === 'current-user' &&
-                    (msg.conversationId === conversationId ||
-                      msg.chatGroupId === message.chatGroupId ||
-                      msg.conversationId === message.chatGroupId)
+                console.log('📨 Existing messages count:', existingMessages.length)
+
+                // FIRST: Check if message with same ID already exists (prevent duplicates)
+                const existingMessageById = existingMessages.find(
+                  (msg: Message) => msg.id === message.id
                 )
 
-                if (tempMessageIndex !== -1) {
-                  // Replace temp message with real message from server
-                  // But preserve content from temp message if server message doesn't have it
-                  const tempMessage = existingMessages[tempMessageIndex]
-                  const finalMessage: Message = {
-                    ...message,
-                    // Preserve content from temp message if server message content is empty
-                    content: message.content || tempMessage.content || ''
+                if (existingMessageById) {
+                  console.log('⚠️ Message already exists with id:', message.id, '- SKIPPING DUPLICATE')
+                  return old // Don't add duplicate
+                }
+
+                // SECOND: Check if there's a temp message from current user that should be replaced
+                // Temp messages have senderId === 'current-user' OR senderId === currentUserId
+                // Only replace if this message is from current user
+                const isOwnMessage = message.senderId === currentUserId
+
+                if (isOwnMessage) {
+                  // Try to find temp message to replace
+                  // Match by: temp ID, same sender, same group/conversation
+                  const tempMessageIndex = existingMessages.findIndex(
+                    (msg: Message) => {
+                      const isTemp = msg.id.startsWith('temp-')
+                      const isFromCurrentUser = msg.senderId === 'current-user' || msg.senderId === currentUserId
+                      const sameGroup =
+                        (msg.chatGroupId && msg.chatGroupId === message.chatGroupId) ||
+                        (msg.conversationId && msg.conversationId === conversationId) ||
+                        (msg.chatGroupId && msg.chatGroupId === conversationId) ||
+                        (msg.conversationId && msg.conversationId === message.chatGroupId)
+
+                      return isTemp && isFromCurrentUser && sameGroup
+                    }
+                  )
+
+                  if (tempMessageIndex !== -1) {
+                    console.log('📨 Replacing temp message at index:', tempMessageIndex)
+                    // Replace temp message with real message from server
+                    const tempMessage = existingMessages[tempMessageIndex]
+                    const finalMessage: Message = {
+                      ...message,
+                      content: message.content || tempMessage.content || ''
+                    }
+                    const newMessages = [...existingMessages]
+                    newMessages[tempMessageIndex] = finalMessage
+                    console.log('📨 Updated messages count:', newMessages.length)
+                    return {
+                      ...old,
+                      messages: newMessages
+                    }
                   }
-                  const newMessages = [...existingMessages]
-                  newMessages[tempMessageIndex] = finalMessage
-                  return {
-                    ...old,
-                    messages: newMessages
-                  }
-                } else {
-                  // No temp message found, add new message
-                  return {
-                    ...old,
-                    messages: [...existingMessages, message]
-                  }
+                }
+
+                // No temp message found or not own message, add new message
+                console.log('📨 Adding new message to list (not duplicate, not temp replacement)')
+                const newMessages = [...existingMessages, message]
+                console.log('📨 New messages count:', newMessages.length)
+                return {
+                  ...old,
+                  messages: newMessages
                 }
               }
             )
@@ -193,7 +247,13 @@ export function useChat() {
           messageType: data.messageType || 'text'
         } as Message
       } else if (signalRConnectedRef.current && data.groupId) {
+        console.log('📤 Sending group message via SignalR:', {
+          groupId: data.groupId,
+          content: data.content,
+          conversationId: data.conversationId
+        })
         await signalRChatService.sendGroupMessage(data.groupId, data.content)
+        console.log('✅ Group message sent via SignalR')
         return {
           id: `temp-${Date.now()}`,
           senderId: 'current-user',
@@ -211,9 +271,22 @@ export function useChat() {
       return chatService.sendMessage(data)
     },
     onSuccess: (newMessage) => {
-      // Always add temp messages to cache immediately for instant UI feedback
-      // For real messages from REST API (not SignalR), also add to cache
-      if (newMessage.id.startsWith('temp-') || !signalRConnectedRef.current) {
+      // Only add temp messages to cache if:
+      // 1. It's a temp message AND SignalR is NOT connected (fallback to REST API)
+      // 2. OR it's a real message from REST API (not SignalR)
+      // 
+      // If SignalR is connected and we sent via SignalR, the message will be received
+      // via onGroupMessage/onPrivateMessage handlers, so we don't need to add temp message here
+
+      // For group messages sent via SignalR, don't add temp message - wait for SignalR response
+      // For private messages sent via SignalR, don't add temp message - wait for SignalR response
+      // Only add temp message if SignalR is not connected (fallback to REST API)
+      if (newMessage.id.startsWith('temp-') && signalRConnectedRef.current) {
+        // SignalR is connected, message will be received via SignalR handlers
+        // Don't add temp message to avoid duplicates
+        console.log('📤 Message sent via SignalR, waiting for SignalR response (not adding temp message)')
+      } else if (newMessage.id.startsWith('temp-') || !signalRConnectedRef.current) {
+        // Add temp message only if SignalR is not connected (REST API fallback)
         const conversationId = newMessage.conversationId || newMessage.chatThreadId || newMessage.chatGroupId || ''
 
         if (conversationId) {

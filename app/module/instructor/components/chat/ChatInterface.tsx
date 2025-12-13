@@ -68,11 +68,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // State to store conversation with members
   const [conversationWithMembers, setConversationWithMembers] = React.useState<Conversation | null>(null)
+  const previousGroupIdRef = React.useRef<string | null>(null)
 
   // Get active conversation data
   const baseConversation = conversations.find(c => c.id === activeConversationId)
   const activeConversation = conversationWithMembers || baseConversation
   const messages = messagesData?.messages || []
+
+  // Leave previous group when switching conversations
+  React.useEffect(() => {
+    const leavePreviousGroup = async () => {
+      if (previousGroupIdRef.current && previousGroupIdRef.current !== activeConversationId) {
+        try {
+          const { signalRChatService } = await import('~/module/instructor/services/SignalRChatService')
+          if (signalRChatService.getConnectionState()) {
+            console.log('🔌 Leaving previous SignalR group:', previousGroupIdRef.current)
+            await signalRChatService.leaveGroup(previousGroupIdRef.current)
+            console.log('✅ Left previous SignalR group')
+          }
+        } catch (error) {
+          console.error('❌ Error leaving previous group:', error)
+        }
+      }
+      previousGroupIdRef.current = activeConversationId && activeConversation?.type === 'group' ? activeConversationId : null
+    }
+
+    leavePreviousGroup()
+  }, [activeConversationId, activeConversation])
 
   // Load conversation members when conversation is selected
   React.useEffect(() => {
@@ -162,6 +184,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Pre-load group members if it's a group conversation
     const selectedConversation = conversations.find(c => c.id === conversationId)
     if (selectedConversation?.type === 'group') {
+      // Join SignalR group to receive real-time messages
+      try {
+        const { signalRChatService } = await import('~/module/instructor/services/SignalRChatService')
+        if (signalRChatService.getConnectionState()) {
+          console.log('🔗 Joining SignalR group:', conversationId)
+          await signalRChatService.joinGroup(conversationId)
+          console.log('✅ Successfully joined SignalR group:', conversationId)
+        } else {
+          console.warn('⚠️ SignalR not connected, cannot join group')
+        }
+      } catch (error) {
+        console.error('❌ Error joining SignalR group:', error)
+      }
+
+      // Load group members
       try {
         const { chatService } = await import('~/module/instructor/services/ChatApi')
         const members = await chatService.getGroupMembers(conversationId)
