@@ -443,8 +443,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           <> • 📚 {activeConversation.courseName}</>
                         )}
                       </p>
-                      {/* Add Member button - only for groups and instructors */}
-                      {activeConversation.type === 'group' && userRole === 'instructor' && (
+                      {/* Add Member button - only for groups, next to member count */}
+                      {activeConversation.type === 'group' && (
                         <button
                           onClick={() => setShowAddMemberModal(true)}
                           className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 hover:text-violet-400 hover:bg-slate-700/50 rounded transition-colors"
@@ -515,8 +515,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         userRole={userRole}
       />
 
-      {/* Add Member Modal - only show when group conversation is active and user is instructor */}
-      {activeConversation && activeConversation.type === 'group' && activeConversationId && userRole === 'instructor' && (
+      {/* Add Member Modal - only show when group conversation is active */}
+      {activeConversation && activeConversation.type === 'group' && activeConversationId && (
         <AddMemberModal
           isOpen={showAddMemberModal}
           onClose={() => setShowAddMemberModal(false)}
