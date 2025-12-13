@@ -13,7 +13,7 @@ export interface Message {
   senderId: string
   chatThreadId?: string | null
   chatGroupId?: string | null
-  content: string
+  content: string | "con chim non "
   sentAt: string
   edited: boolean
   deleted: boolean

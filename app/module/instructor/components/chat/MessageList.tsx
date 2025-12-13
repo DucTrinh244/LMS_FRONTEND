@@ -50,42 +50,54 @@ const MessageList: React.FC<MessageListProps> = ({
     }
   }, [conversationId])
 
-  // Auto scroll to bottom ONLY when:
-  // 1. New message is added (not when conversation changes)
-  // 2. User is near bottom (they want to see new messages)
+  // Auto scroll to bottom when:
+  // 1. First time loading messages for a conversation
+  // 2. New message is added (always scroll, not just when near bottom)
   useEffect(() => {
-    // Don't do anything if loading or conversation is changing
-    if (isLoading || isConversationChangingRef.current) {
+    // Don't do anything if loading
+    if (isLoading) {
       return
     }
 
     const currentLength = messages.length
     const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null
 
-    // Only check for new messages if we have previous state
+    // Scroll function that only scrolls the container, not the whole page
+    const scrollToBottom = (smooth: boolean = false) => {
+      if (containerRef.current) {
+        const container = containerRef.current
+        if (smooth) {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          })
+        } else {
+          container.scrollTop = container.scrollHeight
+        }
+      }
+    }
+
+    // First time loading messages for this conversation - scroll to bottom
     if (previousMessagesLengthRef.current === 0 && previousLastMessageIdRef.current === null) {
-      // First time loading messages for this conversation - don't scroll
       previousMessagesLengthRef.current = currentLength
       previousLastMessageIdRef.current = lastMessageId
+
+      // Scroll to bottom after messages are rendered
+      setTimeout(() => {
+        scrollToBottom(false)
+      }, 100)
       return
     }
 
-    // New message added - only scroll if user is near bottom
+    // New message added - always scroll to bottom
     const hasNewMessage =
       currentLength > previousMessagesLengthRef.current ||
       (lastMessageId && lastMessageId !== previousLastMessageIdRef.current)
 
-    if (hasNewMessage && containerRef.current) {
-      const container = containerRef.current
-      const isNearBottom =
-        container.scrollHeight - container.scrollTop - container.clientHeight < 200
-
-      // Only scroll if user is near bottom (they want to see new messages)
-      if (isNearBottom) {
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-        }, 50)
-      }
+    if (hasNewMessage) {
+      setTimeout(() => {
+        scrollToBottom(true)
+      }, 50)
     }
 
     previousMessagesLengthRef.current = currentLength

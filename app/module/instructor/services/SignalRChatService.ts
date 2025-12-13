@@ -5,7 +5,7 @@ import type { Message } from '~/module/instructor/types/Chat'
 const getSignalRHubURL = (): string => {
   // Check if there's a specific SignalR URL in env
   let signalRURL = import.meta.env.VITE_SIGNALR_HUB_URL
-  
+
   if (signalRURL) {
     // Đảm bảo sử dụng http cho localhost (không phải https)
     if (signalRURL.includes('localhost') && signalRURL.startsWith('https://')) {
@@ -13,21 +13,21 @@ const getSignalRHubURL = (): string => {
     }
     return signalRURL
   }
-  
+
   // Otherwise, derive from API base URL
   let baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7151/api'
-  
+
   // Đảm bảo sử dụng http cho localhost (không phải https)
   if (baseURL.includes('localhost') && baseURL.startsWith('https://')) {
     baseURL = baseURL.replace('https://', 'http://')
   }
-  
+
   // Remove /api suffix if present
   const hubURL = baseURL.replace('/api', '')
-  
+
   // Ensure it doesn't end with /
   const cleanURL = hubURL.endsWith('/') ? hubURL.slice(0, -1) : hubURL
-  
+
   return `${cleanURL}/hubs/chat`
 }
 
@@ -66,14 +66,14 @@ export class SignalRChatService {
 
     const hubURL = getSignalRHubURL()
     console.log('🔗 Connecting to SignalR Hub:', hubURL)
-    
+
     // Đảm bảo URL là HTTP (không phải HTTPS) cho localhost
     const finalURL = hubURL.startsWith('https://') && hubURL.includes('localhost')
       ? hubURL.replace('https://', 'http://')
       : hubURL
-    
+
     console.log('🔗 Final SignalR Hub URL:', finalURL)
-    
+
     this.connection = new signalR.HubConnectionBuilder()
       .withUrl(finalURL, {
         accessTokenFactory: () => token

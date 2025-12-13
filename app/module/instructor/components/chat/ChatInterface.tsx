@@ -63,62 +63,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     isLoading: loadingMessages
   } = useMessages(activeConversationId || '', !!activeConversationId)
 
-  // Mock available users (students for instructor, instructors for student)
-  const [availableUsers] = useState<User[]>(() => {
-    if (userRole === 'student') {
-      // For students, show available instructors
-      return [
-        {
-          id: 'instructor-1',
-          name: 'Sarah Johnson',
-          email: 'sarah@example.com',
-          role: 'instructor',
-          isOnline: true
-        },
-        {
-          id: 'instructor-2',
-          name: 'Michael Chen',
-          email: 'michael@example.com',
-          role: 'instructor',
-          isOnline: false,
-          lastSeen: new Date().toISOString()
-        },
-        {
-          id: 'instructor-3',
-          name: 'Emily Davis',
-          email: 'emily@example.com',
-          role: 'instructor',
-          isOnline: true
-        }
-      ]
-    } else {
-      // For instructors, show available students
-      return [
-        {
-          id: '1',
-          name: 'Nguyễn Văn A',
-          email: 'student1@example.com',
-          role: 'student',
-          isOnline: true
-        },
-        {
-          id: '2',
-          name: 'Trần Thị B',
-          email: 'student2@example.com',
-          role: 'student',
-          isOnline: false,
-          lastSeen: new Date().toISOString()
-        },
-        {
-          id: '3',
-          name: 'Lê Văn C',
-          email: 'student3@example.com',
-          role: 'student',
-          isOnline: true
-        }
-      ]
-    }
-  })
+  // Available users - empty by default, should be fetched from API if needed
+  const [availableUsers] = useState<User[]>([])
 
   // State to store conversation with members
   const [conversationWithMembers, setConversationWithMembers] = React.useState<Conversation | null>(null)
@@ -251,6 +197,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     // Determine if it's a group or private conversation
     const isGroup = activeConversation.type === 'group'
+
 
     await sendMessage({
       ...data,

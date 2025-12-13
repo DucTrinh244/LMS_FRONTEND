@@ -136,11 +136,17 @@ export const chatService = {
   },
 
   // Get group message history
+  // COMMENTED FOR SIGNALR TESTING - Only use SignalR for real-time messages
   getGroupHistory: async (
     groupId: string,
     page: number = 1,
     pageSize: number = 50
   ): Promise<Message[]> => {
+    // COMMENTED FOR TESTING - Return empty array, use SignalR instead
+    console.log('⚠️ getGroupHistory is commented for SignalR testing - groupId:', groupId)
+    return []
+    
+    /* ORIGINAL CODE - COMMENTED FOR TESTING
     const response = await httpClient.get<ApiResponse<ChatMessageDto[]>>(
       `/Chat/group/${groupId}/history?page=${page}&pageSize=${pageSize}`
     )
@@ -150,6 +156,7 @@ export const chatService = {
     }
 
     return response.data.value.map(msg => mapMessageDtoToMessage(msg, groupId))
+    */
   },
 
   // ========== GROUP MANAGEMENT ==========
@@ -353,7 +360,6 @@ export const chatService = {
 
       try {
         messages = await chatService.getGroupHistory(conversationId, page, limit)
-        console.log('✅ getGroupHistory success:', messages.length, 'messages')
       } catch (error) {
         console.error('❌ getGroupHistory failed:', error)
         // If group fails, try as private thread
