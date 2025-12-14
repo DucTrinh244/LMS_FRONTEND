@@ -1,28 +1,32 @@
-import { Clock, HelpCircle, BookOpen, Play, Eye } from 'lucide-react'
-import { useState } from 'react'
+import { Clock, Eye, HelpCircle, Play } from 'lucide-react'
 import { useNavigate } from 'react-router'
-import { useQuizzes } from '~/module/instructor/hooks/useQuiz'
-import { useMyAttempts } from '~/module/student/hooks/useQuizAttempt'
 import type { QuizListDto } from '~/module/instructor/types/Quiz'
+import { useMyAttempts } from '~/module/student/hooks/useQuizAttempt'
+import { useStudentQuizzes } from '~/module/student/hooks/useStudentQuizzes'
 import { useToast } from '~/shared/hooks/useToast'
 
 interface QuizListContentProps {
   courseId?: string
+  onNavigateToAttempts?: (quizId: string) => void
 }
 
-const QuizListContent: React.FC<QuizListContentProps> = ({ courseId }) => {
+const QuizListContent: React.FC<QuizListContentProps> = ({ courseId, onNavigateToAttempts }) => {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { quizzes, loading } = useQuizzes(courseId, true) // Only published quizzes
+  const { quizzes, loading } = useStudentQuizzes() // Get quizzes from enrolled courses
 
   const handleStartQuiz = (quizId: string) => {
     navigate(`/student/quiz/${quizId}/attempt`)
   }
 
   const handleViewAttempts = (quizId: string) => {
-    // Navigate to My Quiz Attempts page and filter by quiz
-    navigate('/student')
-    // Could add filter functionality later
+    if (onNavigateToAttempts) {
+      // Use callback if provided (when inside StudentDashboard)
+      onNavigateToAttempts(quizId)
+    } else {
+      // Otherwise navigate normally
+      navigate(`/student?menu=My Quiz Attempts&quizId=${quizId}`)
+    }
   }
 
   if (loading) {
@@ -100,7 +104,7 @@ const QuizCard: React.FC<QuizCardProps> = ({ quiz, onStart, onViewAttempts }) =>
             <span className="text-slate-400">•</span>
             <span className="text-slate-400 flex items-center gap-1">
               <Clock className="w-4 h-4" />
-              {quiz.timeLimit} phút
+              {quiz.timeLimit > 0 ? `${quiz.timeLimit} phút` : 'Không giới hạn'}
             </span>
             <span className="text-slate-400">•</span>
             <span className="text-slate-400 flex items-center gap-1">

@@ -174,6 +174,8 @@ export interface QuizAttemptAnswerDto {
 
 export interface QuizAttemptSummaryDto {
   id: string
+  quizId?: string
+  quizTitle?: string
   score: number
   totalPoints: number
   percentage: number

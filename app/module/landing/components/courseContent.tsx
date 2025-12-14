@@ -13,6 +13,7 @@ import {
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { courseService, type CategoryWithCount, type CourseResponse, type InstructorWithCount } from '~/module/landing/services/CourseApi';
+import { useWishlist } from '~/shared/hooks/useWishlist';
 
 const CourseGridPage = () => {
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -21,7 +22,7 @@ const CourseGridPage = () => {
   const [instructorsOpen, setInstructorsOpen] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedInstructors, setSelectedInstructors] = useState<string[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
+  const { isInWishlist, toggleWishlist } = useWishlist();
 
   // Fetch courses from API
   const {
@@ -58,10 +59,8 @@ const CourseGridPage = () => {
   });
 
 
-  const toggleWishlist = (courseId: string) => {
-    setWishlist((prev) =>
-      prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]
-    );
+  const handleToggleWishlist = (courseId: string) => {
+    toggleWishlist(courseId);
   };
 
   // Filter courses based on selected filters
@@ -300,12 +299,12 @@ const CourseGridPage = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            toggleWishlist(course.id);
+                            handleToggleWishlist(course.id);
                           }}
                           className="absolute top-3 right-3 w-8 h-8 bg-slate-800/50 backdrop-blur-xl border border-slate-600 rounded-full flex items-center justify-center hover:bg-violet-600/50 transition z-10"
                         >
                           <Heart
-                            className={`w-4 h-4 ${wishlist.includes(course.id) ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`}
+                            className={`w-4 h-4 ${isInWishlist(course.id) ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`}
                           />
                         </button>
                       </div>

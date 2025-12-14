@@ -345,6 +345,15 @@ export const quizService = {
     return httpClient.get('/quiz/unpublished').then((res) => res.data)
   },
 
+  // ==================== Student Specific ====================
+
+  /**
+   * Get my quizzes for student (from enrolled courses)
+   */
+  getMyQuizzesForStudent: (): Promise<BaseResponse<QuizListDto[]>> => {
+    return httpClient.get('/quiz/student/my-quizzes').then((res) => res.data)
+  },
+
   /**
    * Generate quiz with AI
    */

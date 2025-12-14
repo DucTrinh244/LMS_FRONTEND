@@ -1,56 +1,65 @@
-import { Calendar, CheckCircle, Clock, CreditCard, Download, Receipt, ShoppingCart } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, CreditCard, Receipt, ShoppingCart, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { studentPaymentService } from '~/module/student/services/PaymentApi';
+import { PaymentStatus } from '~/module/student/types/payment';
+import type { PaymentOrderListItemDto } from '~/module/student/types/payment';
+import { getPaymentStatusText, getPaymentStatusColor, formatCurrency } from '~/module/student/types/payment';
+import { useToast } from '~/shared/hooks/useToast';
 
 const OrderHistoryContent = () => {
-  const orders = [
-    {
-      id: 'ORD-001',
-      date: '2024-01-15',
-      items: [
-        { name: 'Advanced React Development', price: 149 },
-        { name: 'Complete Python Bootcamp', price: 129 }
-      ],
-      total: 278,
-      status: 'completed',
-      paymentMethod: 'Credit Card',
-      invoice: 'INV-001'
-    },
-    {
-      id: 'ORD-002',
-      date: '2024-01-10',
-      items: [
-        { name: 'UI/UX Design Degree', price: 120 }
-      ],
-      total: 120,
-      status: 'completed',
-      paymentMethod: 'PayPal',
-      invoice: 'INV-002'
-    },
-    {
-      id: 'ORD-003',
-      date: '2024-01-08',
-      items: [
-        { name: 'Wordpress for Beginners', price: 140 },
-        { name: 'Sketch from A to Z (2024)', price: 140 }
-      ],
-      total: 280,
-      status: 'completed',
-      paymentMethod: 'Credit Card',
-      invoice: 'INV-003'
-    },
-    {
-      id: 'ORD-004',
-      date: '2024-01-05',
-      items: [
-        { name: 'Digital Marketing Mastery', price: 99 }
-      ],
-      total: 99,
-      status: 'pending',
-      paymentMethod: 'Credit Card',
-      invoice: 'INV-004'
-    }
-  ];
+  const { toast } = useToast();
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [statusFilter, setStatusFilter] = useState<PaymentStatus | undefined>(undefined);
 
-  const totalSpent = orders.reduce((sum, order) => sum + order.total, 0);
+  const {
+    data: ordersData,
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['student-orders', page, pageSize, statusFilter],
+    queryFn: async () => {
+      const res = await studentPaymentService.getMyOrders(page, pageSize, statusFilter);
+      if (res.isSuccess && res.value) {
+        return res.value;
+      }
+      throw new Error(res.error?.message || 'Không thể tải lịch sử đơn hàng');
+    },
+    retry: 1
+  });
+
+  const orders = ordersData?.items || [];
+  const totalCount = ordersData?.totalCount || 0;
+  const totalPages = ordersData?.totalPages || 0;
+  
+  const totalSpent = orders
+    .filter(order => order.statusCode === PaymentStatus.Paid)
+    .reduce((sum, order) => sum + order.amount, 0);
+  
+  const completedCount = orders.filter(order => order.statusCode === PaymentStatus.Paid).length;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center text-white py-12">
+          <p>Đang tải lịch sử đơn hàng...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-6 text-center">
+          <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-white mb-2">Lỗi tải dữ liệu</h3>
+          <p className="text-slate-400">{error instanceof Error ? error.message : 'Có lỗi xảy ra'}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -62,8 +71,8 @@ const OrderHistoryContent = () => {
               <ShoppingCart className="w-7 h-7 text-violet-400" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-white">{orders.length}</div>
-              <div className="text-sm font-medium text-slate-300">Total Orders</div>
+              <div className="text-3xl font-bold text-white">{totalCount}</div>
+              <div className="text-sm font-medium text-slate-300">Tổng đơn hàng</div>
             </div>
           </div>
         </div>
@@ -73,10 +82,8 @@ const OrderHistoryContent = () => {
               <CheckCircle className="w-7 h-7 text-green-400" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-white">
-                {orders.filter(o => o.status === 'completed').length}
-              </div>
-              <div className="text-sm font-medium text-slate-300">Completed</div>
+              <div className="text-3xl font-bold text-white">{completedCount}</div>
+              <div className="text-sm font-medium text-slate-300">Đã thanh toán</div>
             </div>
           </div>
         </div>
@@ -86,8 +93,8 @@ const OrderHistoryContent = () => {
               <CreditCard className="w-7 h-7 text-amber-400" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-white">${totalSpent}</div>
-              <div className="text-sm font-medium text-slate-300">Total Spent</div>
+              <div className="text-3xl font-bold text-white">{formatCurrency(totalSpent)}</div>
+              <div className="text-sm font-medium text-slate-300">Tổng chi tiêu</div>
             </div>
           </div>
         </div>
@@ -95,67 +102,111 @@ const OrderHistoryContent = () => {
 
       {/* Orders List */}
       <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-        <h3 className="text-xl font-bold text-white mb-6">Order History</h3>
-        <div className="space-y-4">
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              className="p-5 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition border border-slate-600"
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-white">Lịch sử đơn hàng</h3>
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <select
+              value={statusFilter || ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                setStatusFilter(value ? Number(value) as PaymentStatus : undefined);
+                setPage(1);
+              }}
+              className="px-4 py-2 bg-slate-700 text-white rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <h4 className="text-lg font-semibold text-white">Order #{order.id}</h4>
-                    <span className={`${order.status === 'completed'
-                      ? 'bg-green-600/20 text-green-400'
-                      : 'bg-yellow-600/20 text-yellow-400'
-                      } text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1`}>
-                      {order.status === 'completed' ? (
-                        <CheckCircle className="w-3 h-3" />
-                      ) : (
-                        <Clock className="w-3 h-3" />
-                      )}
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-slate-400 mb-3">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>{new Date(order.date).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" />
-                      <span>{order.paymentMethod}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Receipt className="w-4 h-4" />
-                      <span>Invoice: {order.invoice}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {order.items.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between text-sm">
-                        <span className="text-slate-300">{item.name}</span>
-                        <span className="text-white font-semibold">${item.price}</span>
+              <option value="">Tất cả trạng thái</option>
+              <option value={PaymentStatus.Pending}>Đang chờ thanh toán</option>
+              <option value={PaymentStatus.Paid}>Đã thanh toán</option>
+              <option value={PaymentStatus.Failed}>Thanh toán thất bại</option>
+              <option value={PaymentStatus.Canceled}>Đã hủy</option>
+            </select>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {orders.length === 0 ? (
+            <div className="text-center py-12">
+              <ShoppingCart className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Chưa có đơn hàng nào</h3>
+              <p className="text-slate-400">Bạn chưa có đơn hàng nào trong hệ thống</p>
+            </div>
+          ) : (
+            <>
+              {orders.map((order: PaymentOrderListItemDto) => (
+                <div
+                  key={order.id}
+                  className="p-5 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition border border-slate-600"
+                >
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <h4 className="text-lg font-semibold text-white">{order.courseTitle}</h4>
+                        <span className={`${getPaymentStatusColor(order.statusCode)} text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1`}>
+                          {order.statusCode === PaymentStatus.Paid ? (
+                            <CheckCircle className="w-3 h-3" />
+                          ) : order.statusCode === PaymentStatus.Pending ? (
+                            <Clock className="w-3 h-3" />
+                          ) : (
+                            <XCircle className="w-3 h-3" />
+                          )}
+                          {getPaymentStatusText(order.statusCode)}
+                        </span>
                       </div>
-                    ))}
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400 mb-3">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>{new Date(order.createdAt).toLocaleDateString('vi-VN')}</span>
+                        </div>
+                        {order.paidAt && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Thanh toán: {new Date(order.paidAt).toLocaleDateString('vi-VN')}</span>
+                          </div>
+                        )}
+                        {order.txnRef && (
+                          <div className="flex items-center gap-2">
+                            <Receipt className="w-4 h-4" />
+                            <span>Mã: {order.txnRef}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-3">
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-violet-400 mb-1">
+                          {formatCurrency(order.amount, order.currency)}
+                        </div>
+                        <div className="text-xs text-slate-400">Tổng tiền</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-3">
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-violet-400 mb-1">
-                      ${order.total}
-                    </div>
-                    <div className="text-xs text-slate-400">Total Amount</div>
-                  </div>
-                  <button className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:shadow-violet-500/50 transition flex items-center gap-2">
-                    <Download className="w-4 h-4" />
-                    Download Invoice
+              ))}
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-4">
+                  <button
+                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                    disabled={page === 1}
+                    className="px-4 py-2 bg-slate-700 text-white rounded-lg font-medium hover:bg-slate-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Trước
+                  </button>
+                  <span className="text-slate-300 px-4">
+                    Trang {page} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={page === totalPages}
+                    className="px-4 py-2 bg-slate-700 text-white rounded-lg font-medium hover:bg-slate-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Sau
                   </button>
                 </div>
-              </div>
-            </div>
-          ))}
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

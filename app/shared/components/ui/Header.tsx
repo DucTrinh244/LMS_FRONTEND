@@ -1,12 +1,14 @@
-import { BookOpen, Globe, Heart, Menu, ShoppingCart, X } from 'lucide-react'
+import { BookOpen, Globe, Heart, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { useAuth } from '~/context/authContext'
 import { getDefaultRedirectPath } from '~/shared/components/auth/RouteGuard'
+import { useWishlist } from '~/shared/hooks/useWishlist'
 
 const Header = () => {
   const { user, logout } = useAuth()
   const location = useLocation()
+  const { wishlistCount } = useWishlist()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [courseDropdownOpen, setCourseDropdownOpen] = useState(false)
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false)
@@ -119,15 +121,11 @@ const Header = () => {
               className="p-2.5 hover:bg-slate-800 rounded-lg transition group relative"
             >
               <Heart className="w-5 h-5 text-slate-300 group-hover:text-rose-400 transition" />
-            </Link>
-            <Link
-              to="/cart"
-              className="p-2.5 hover:bg-slate-800 rounded-lg transition relative group"
-            >
-              <ShoppingCart className="w-5 h-5 text-slate-300 group-hover:text-violet-400 transition" />
-              <span className="absolute -top-1 -right-1 bg-violet-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-semibold">
-                3
-              </span>
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center font-semibold">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
             </Link>
 
             {/* Language */}

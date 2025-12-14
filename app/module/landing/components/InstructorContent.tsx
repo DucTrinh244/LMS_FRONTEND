@@ -14,17 +14,38 @@ import {
   Star
 } from 'lucide-react';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { courseService, type CategoryWithCount, type InstructorWithCount } from '~/module/landing/services/CourseApi';
 
 const InstructorContent = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [expandedCategories, setExpandedCategories] = useState(true);
   const [expandedInstructors, setExpandedInstructors] = useState(true);
-  const [expandedPrice, setExpandedPrice] = useState(true);
-  const [expandedRange, setExpandedRange] = useState(true);
-  const [expandedLevel, setExpandedLevel] = useState(true);
 
-  const [selectedCategories, setSelectedCategories] = useState(['IT & Software']);
-  const [selectedInstructors, setSelectedInstructors] = useState(['Nicole Brown']);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedInstructors, setSelectedInstructors] = useState<string[]>([]);
+
+  // Fetch categories from API
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading
+  } = useQuery<CategoryWithCount[]>({
+    queryKey: ['categories-with-count'],
+    queryFn: () => courseService.getCategoriesWithCount(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2
+  });
+
+  // Fetch instructors from API
+  const {
+    data: instructorsList = [],
+    isLoading: instructorsLoading
+  } = useQuery<InstructorWithCount[]>({
+    queryKey: ['instructors-with-count'],
+    queryFn: () => courseService.getInstructorsWithCount(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2
+  });
 
   const instructors = [
     {
@@ -137,50 +158,20 @@ const InstructorContent = () => {
     }
   ];
 
-  const categories = [
-    { name: 'Backend', count: 3 },
-    { name: 'CSS', count: 2 },
-    { name: 'Frontend', count: 2 },
-    { name: 'General', count: 2 },
-    { name: 'IT & Software', count: 2 },
-    { name: 'Photography', count: 2 },
-    { name: 'Programming Language', count: 3 },
-    { name: 'Technology', count: 2 }
-  ];
 
-  const instructorsList = [
-    { name: 'Keny White', count: 10 },
-    { name: 'Himala Hyuga', count: 5 },
-    { name: 'John Doe', count: 3 },
-    { name: 'Nicole Brown', count: 0 }
-  ];
-
-  const priceOptions = [
-    { name: 'All', count: 10 },
-    { name: 'Free', count: 5 },
-    { name: 'Paid', count: 3 }
-  ];
-
-  const levelOptions = [
-    { name: 'Beginner', count: 10 },
-    { name: 'Intermediate', count: 5 },
-    { name: 'Advanced', count: 21 },
-    { name: 'Expert', count: 3 }
-  ];
-
-  const toggleCategory = (category: string) => {
+  const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev => 
-      prev.includes(category) 
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
+      prev.includes(categoryId) 
+        ? prev.filter(c => c !== categoryId)
+        : [...prev, categoryId]
     );
   };
 
-  const toggleInstructor = (instructor: string) => {
+  const toggleInstructor = (instructorId: string) => {
     setSelectedInstructors(prev => 
-      prev.includes(instructor) 
-        ? prev.filter(i => i !== instructor)
-        : [...prev, instructor]
+      prev.includes(instructorId) 
+        ? prev.filter(i => i !== instructorId)
+        : [...prev, instructorId]
     );
   };
 
@@ -217,33 +208,38 @@ const InstructorContent = () => {
                 </button>
                 {expandedCategories && (
                   <div className="space-y-2">
-                    {categories.map((category) => (
-                      <label key={category.name} className="flex items-center gap-2 cursor-pointer group">
-                        <div className="relative">
-                          <input
-                            type="checkbox"
-                            checked={selectedCategories.includes(category.name)}
-                            onChange={() => toggleCategory(category.name)}
-                            className="sr-only"
-                          />
-                          <div className={`w-4 h-4 border-2 rounded flex items-center justify-center transition ${
-                            selectedCategories.includes(category.name)
-                              ? 'bg-violet-600 border-violet-600'
-                              : 'border-slate-300 group-hover:border-violet-400'
-                          }`}>
-                            {selectedCategories.includes(category.name) && (
-                              <Check className="w-3 h-3 text-white" />
-                            )}
-                          </div>
-                        </div>
-                        <span className="text-xs text-slate-300 flex-1">
-                          {category.name} ({category.count})
-                        </span>
-                      </label>
-                    ))}
-                    <button className="text-violet-400 hover:text-violet-300 font-semibold text-xs mt-2">
-                      See More
-                    </button>
+                    {categoriesLoading ? (
+                      <p className="text-xs text-slate-400">Đang tải...</p>
+                    ) : categories.length > 0 ? (
+                      <>
+                        {categories.map((category) => (
+                          <label key={category.id} className="flex items-center gap-2 cursor-pointer group">
+                            <div className="relative">
+                              <input
+                                type="checkbox"
+                                checked={selectedCategories.includes(category.id)}
+                                onChange={() => toggleCategory(category.id)}
+                                className="sr-only"
+                              />
+                              <div className={`w-4 h-4 border-2 rounded flex items-center justify-center transition ${
+                                selectedCategories.includes(category.id)
+                                  ? 'bg-violet-600 border-violet-600'
+                                  : 'border-slate-300 group-hover:border-violet-400'
+                              }`}>
+                                {selectedCategories.includes(category.id) && (
+                                  <Check className="w-3 h-3 text-white" />
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-xs text-slate-300 flex-1">
+                              {category.name} ({category.count})
+                            </span>
+                          </label>
+                        ))}
+                      </>
+                    ) : (
+                      <p className="text-xs text-slate-400">Không có danh mục</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -263,115 +259,38 @@ const InstructorContent = () => {
                 </button>
                 {expandedInstructors && (
                   <div className="space-y-2">
-                    {instructorsList.map((instructor) => (
-                      <label key={instructor.name} className="flex items-center gap-2 cursor-pointer group">
-                        <div className="relative">
-                          <input
-                            type="checkbox"
-                            checked={selectedInstructors.includes(instructor.name)}
-                            onChange={() => toggleInstructor(instructor.name)}
-                            className="sr-only"
-                          />
-                          <div className={`w-4 h-4 border-2 rounded flex items-center justify-center transition ${
-                            selectedInstructors.includes(instructor.name)
-                              ? 'bg-violet-600 border-violet-600'
-                              : 'border-slate-300 group-hover:border-violet-400'
-                          }`}>
-                            {selectedInstructors.includes(instructor.name) && (
-                              <Check className="w-3 h-3 text-white" />
-                            )}
-                          </div>
-                        </div>
-                        <span className="text-xs text-slate-300 flex-1">
-                          {instructor.name} {instructor.count > 0 && `(${instructor.count})`}
-                        </span>
-                      </label>
-                    ))}
-                    <button className="text-violet-400 hover:text-violet-300 font-semibold text-xs mt-2">
-                      See More
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Price */}
-              <div className="mb-4 border-b border-slate-700 pb-4">
-                <button
-                  onClick={() => setExpandedPrice(!expandedPrice)}
-                  className="w-full flex items-center justify-between mb-3"
-                >
-                  <h3 className="font-bold text-white text-sm">Price</h3>
-                  {expandedPrice ? (
-                    <ChevronUp className="w-4 h-4 text-slate-300" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-slate-300" />
-                  )}
-                </button>
-                {expandedPrice && (
-                  <div className="space-y-2">
-                    {priceOptions.map((option) => (
-                      <label key={option.name} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="price"
-                          className="w-4 h-4 text-violet-600 focus:ring-violet-500"
-                        />
-                        <span className="text-xs text-slate-300">
-                          {option.name} ({option.count})
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Range */}
-              <div className="mb-4 border-b border-slate-700 pb-4">
-                <button
-                  onClick={() => setExpandedRange(!expandedRange)}
-                  className="w-full flex items-center justify-between mb-3"
-                >
-                  <h3 className="font-bold text-white text-sm">Range</h3>
-                  {expandedRange ? (
-                    <ChevronUp className="w-4 h-4 text-slate-300" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-slate-300" />
-                  )}
-                </button>
-                {expandedRange && (
-                  <input
-                    type="range"
-                    className="w-full h-1.5 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-violet-600"
-                  />
-                )}
-              </div>
-
-              {/* Level */}
-              <div>
-                <button
-                  onClick={() => setExpandedLevel(!expandedLevel)}
-                  className="w-full flex items-center justify-between mb-3"
-                >
-                  <h3 className="font-bold text-white text-sm">Level</h3>
-                  {expandedLevel ? (
-                    <ChevronUp className="w-4 h-4 text-slate-300" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-slate-300" />
-                  )}
-                </button>
-                {expandedLevel && (
-                  <div className="space-y-2">
-                    {levelOptions.map((option) => (
-                      <label key={option.name} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
-                        />
-                        <span className="text-xs text-slate-300">
-                          {option.name} ({option.count})
-                        </span>
-                      </label>
-                    ))}
+                    {instructorsLoading ? (
+                      <p className="text-xs text-slate-400">Đang tải...</p>
+                    ) : instructorsList.length > 0 ? (
+                      <>
+                        {instructorsList.map((instructor) => (
+                          <label key={instructor.id} className="flex items-center gap-2 cursor-pointer group">
+                            <div className="relative">
+                              <input
+                                type="checkbox"
+                                checked={selectedInstructors.includes(instructor.id)}
+                                onChange={() => toggleInstructor(instructor.id)}
+                                className="sr-only"
+                              />
+                              <div className={`w-4 h-4 border-2 rounded flex items-center justify-center transition ${
+                                selectedInstructors.includes(instructor.id)
+                                  ? 'bg-violet-600 border-violet-600'
+                                  : 'border-slate-300 group-hover:border-violet-400'
+                              }`}>
+                                {selectedInstructors.includes(instructor.id) && (
+                                  <Check className="w-3 h-3 text-white" />
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-xs text-slate-300 flex-1">
+                              {instructor.name} {instructor.count > 0 && `(${instructor.count})`}
+                            </span>
+                          </label>
+                        ))}
+                      </>
+                    ) : (
+                      <p className="text-xs text-slate-400">Không có giảng viên</p>
+                    )}
                   </div>
                 )}
               </div>

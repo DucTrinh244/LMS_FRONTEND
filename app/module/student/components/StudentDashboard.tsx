@@ -7,15 +7,14 @@ import {
   LayoutDashboard,
   LogOut,
   MessageSquare,
-  Repeat,
   Settings,
   ShoppingCart,
   Star,
   User
 } from "lucide-react";
-import { useState, type JSX } from "react";
+import { useState, useEffect, type JSX } from "react";
 import { useToast } from "~/shared/hooks/useToast";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "~/context/authContext";
 import DashboardContent from "~/module/student/components/DashboardContent";
 import EnrolledCoursesContent from "../pages/EnrolledCoursesContent";
@@ -25,10 +24,8 @@ import MyProfileContent from "../pages/MyProfileContent";
 import MyQuizAttemptsContent from "../pages/MyQuizAttemptsContent";
 import QuizListContent from "../pages/QuizListContent";
 import OrderHistoryContent from "../pages/OrderHistoryContent";
-import ReferralsContent from "../pages/ReferralsContent";
 import ReviewsContent from "../pages/ReviewsContent";
 import SettingsContent from "../pages/SettingsContent";
-import SupportTicketsContent from "../pages/SupportTicketsContent";
 import WishlistContent from "../pages/WishlistContent";
 
 // Define type for menu item labels
@@ -42,9 +39,7 @@ type MenuItem =
   | 'Quizzes'
   | 'My Quiz Attempts'
   | 'Order History'
-  | 'Referrals'
   | 'Messages'
-  | 'Support Tickets'
   | 'Settings'
   | 'Logout';
 
@@ -97,7 +92,39 @@ const LogoutContent = () => {
 };
 
 const StudentDashboard = () => {
-  const [activeMenu, setActiveMenu] = useState<MenuItem>('Dashboard');
+  const [searchParams, setSearchParams] = useSearchParams()
+  const menuParam = searchParams.get('menu') as MenuItem | null
+  const [activeMenu, setActiveMenu] = useState<MenuItem>(menuParam || 'Dashboard');
+
+  // Update activeMenu when URL param changes
+  useEffect(() => {
+    const menu = searchParams.get('menu') as MenuItem | null
+    const quizId = searchParams.get('quizId')
+    if (menu) {
+      setActiveMenu(menu)
+      // Scroll to top of content area when menu changes
+      setTimeout(() => {
+        const contentArea = document.querySelector('.lg\\:col-span-3')
+        if (contentArea) {
+          contentArea.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
+    }
+  }, [searchParams])
+
+  // Also listen to popstate events for manual URL changes
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search)
+      const menu = urlParams.get('menu') as MenuItem | null
+      if (menu) {
+        setActiveMenu(menu)
+        setSearchParams(urlParams)
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [setSearchParams])
 
   const menuItems = [
     { icon: <LayoutDashboard className="w-4 h-4" />, label: 'Dashboard' },
@@ -109,10 +136,24 @@ const StudentDashboard = () => {
     { icon: <HelpCircle className="w-4 h-4" />, label: 'Quizzes' },
     { icon: <HelpCircle className="w-4 h-4" />, label: 'My Quiz Attempts' },
     { icon: <ShoppingCart className="w-4 h-4" />, label: 'Order History' },
-    { icon: <Repeat className="w-4 h-4" />, label: 'Referrals' },
-    { icon: <MessageSquare className="w-4 h-4" />, label: 'Messages' },
-    { icon: <HelpCircle className="w-4 h-4" />, label: 'Support Tickets' }
+    { icon: <MessageSquare className="w-4 h-4" />, label: 'Messages' }
   ];
+
+  // Get quizId from URL params for MyQuizAttemptsContent
+  const quizId = searchParams.get('quizId')
+
+  // Handler to navigate to attempts with quizId
+  const handleNavigateToAttempts = (quizId: string) => {
+    setActiveMenu('My Quiz Attempts')
+    setSearchParams({ menu: 'My Quiz Attempts', quizId })
+    // Scroll to content area
+    setTimeout(() => {
+      const contentArea = document.querySelector('.lg\\:col-span-3')
+      if (contentArea) {
+        contentArea.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
 
   // Map menu items to content components
   const contentMap: Record<MenuItem, JSX.Element> = {
@@ -122,12 +163,10 @@ const StudentDashboard = () => {
     'My Certificates': <MyCertificatesContent />,
     Wishlist: <WishlistContent />,
     Reviews: <ReviewsContent />,
-    Quizzes: <QuizListContent />,
-    'My Quiz Attempts': <MyQuizAttemptsContent />,
+    Quizzes: <QuizListContent onNavigateToAttempts={handleNavigateToAttempts} />,
+    'My Quiz Attempts': <MyQuizAttemptsContent quizId={quizId || undefined} />,
     'Order History': <OrderHistoryContent />,
-    Referrals: <ReferralsContent />,
     Messages: <MessagesContent />,
-    'Support Tickets': <SupportTicketsContent />,
     Settings: <SettingsContent />,
     Logout: <LogoutContent />
   };
@@ -193,7 +232,7 @@ const StudentDashboard = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3" key={`${activeMenu}-${quizId || ''}`}>
           {contentMap[activeMenu]}
         </div>
       </div>

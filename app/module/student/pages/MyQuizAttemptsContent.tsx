@@ -5,26 +5,56 @@ import { quizService } from '~/module/instructor/services/QuizApi'
 import type { QuizAttemptSummaryDto } from '~/module/instructor/types/Quiz'
 import { useToast } from '~/shared/hooks/useToast'
 
-const MyQuizAttemptsContent = () => {
+interface MyQuizAttemptsContentProps {
+  quizId?: string
+}
+
+const MyQuizAttemptsContent = ({ quizId }: MyQuizAttemptsContentProps) => {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [quizAttempts, setQuizAttempts] = useState<QuizAttemptSummaryDto[]>([])
+  const [quizTitle, setQuizTitle] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadRecentAttempts()
-  }, [])
+    loadAttempts()
+  }, [quizId])
 
-  const loadRecentAttempts = async () => {
+  const loadAttempts = async () => {
     try {
       setLoading(true)
-      const res = await quizService.getMyRecentAttempts(50)
-      if (res.isSuccess && res.value) {
-        setQuizAttempts(res.value)
+      setQuizTitle('') // Reset quiz title
+      
+      if (quizId) {
+        // Load quiz info to get title (for when viewing specific quiz)
+        try {
+          const quizRes = await quizService.getQuiz(quizId)
+          if (quizRes.isSuccess && quizRes.value) {
+            setQuizTitle(quizRes.value.title)
+          }
+        } catch (quizError: any) {
+          console.error('Error loading quiz:', quizError)
+          // Continue even if quiz title fails to load
+        }
+        
+        // Load attempts for specific quiz
+        const res = await quizService.getMyAttempts(quizId)
+        if (res.isSuccess && res.value) {
+          setQuizAttempts(res.value)
+        } else {
+          toast.error(res.error?.message || 'Không thể tải lịch sử attempts')
+        }
       } else {
-        toast.error(res.error?.message || 'Không thể tải lịch sử attempts')
+        // Load all recent attempts (now includes quizTitle in response)
+        const res = await quizService.getMyRecentAttempts(50)
+        if (res.isSuccess && res.value) {
+          setQuizAttempts(res.value)
+        } else {
+          toast.error(res.error?.message || 'Không thể tải lịch sử attempts')
+        }
       }
     } catch (error: any) {
+      console.error('Error loading attempts:', error)
       toast.error(error?.message || 'Có lỗi xảy ra')
     } finally {
       setLoading(false)
@@ -109,7 +139,19 @@ const MyQuizAttemptsContent = () => {
 
       {/* Quiz Attempts List */}
       <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-md p-6">
-        <h3 className="text-xl font-bold text-white mb-6">Quiz Attempts History</h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-white">
+            {quizId ? 'Lịch sử làm bài Quiz' : 'Quiz Attempts History'}
+          </h3>
+          {quizId && (
+            <button
+              onClick={() => navigate('/student?menu=My Quiz Attempts')}
+              className="text-sm text-violet-400 hover:text-violet-300 transition"
+            >
+              Xem tất cả attempts
+            </button>
+          )}
+        </div>
         <div className="space-y-4">
           {quizAttempts.length === 0 ? (
             <div className="text-center py-12">
@@ -126,7 +168,9 @@ const MyQuizAttemptsContent = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-lg font-semibold text-white">Quiz Attempt</h4>
+                      <h4 className="text-lg font-semibold text-white">
+                        {attempt.quizTitle || quizTitle || (quizId ? 'Đang tải quiz title...' : 'Quiz Attempt')}
+                      </h4>
                       {attempt.isPassed && (
                         <span className="bg-green-600/20 text-green-400 text-xs font-semibold px-2 py-1 rounded-full">
                           Đã đạt
