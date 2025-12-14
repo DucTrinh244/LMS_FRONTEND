@@ -19,6 +19,7 @@ export default [
   route('contact', 'module/landing/pages/contactPage.tsx'),
   route('faq', 'module/landing/pages/FAQPage.tsx'),
   route('pricing', 'module/landing/pages/pricingPages.tsx'),
+  route('become-instructor', 'module/landing/pages/BecomeInstructorPage.tsx'),
 
   // ============================================
   // AUTH ROUTES - Guest only (chưa đăng nhập)

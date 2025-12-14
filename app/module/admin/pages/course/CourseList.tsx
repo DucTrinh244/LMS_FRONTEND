@@ -10,14 +10,14 @@ export const CourseList: React.FC<{
   onReject: (id: string) => void;
   onToggleStatus: (id: string) => void;
 }> = ({ courses, onViewDetail, onEdit, onDelete, onApprove, onReject, onToggleStatus }) => {
-  
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-600/20 text-green-400 border border-green-600/30';
+      case 'pending': return 'bg-yellow-600/20 text-yellow-400 border border-yellow-600/30';
+      case 'inactive': return 'bg-slate-600/20 text-slate-400 border border-slate-600/30';
+      case 'rejected': return 'bg-red-600/20 text-red-400 border border-red-600/30';
+      default: return 'bg-slate-600/20 text-slate-400 border border-slate-600/30';
     }
   };
 
@@ -34,7 +34,7 @@ export const CourseList: React.FC<{
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {courses.map(course => (
-        <div key={course.id} className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition">
+        <div key={course.id} className="bg-slate-700/50 rounded-xl p-4 border border-slate-600 hover:border-slate-500 hover:shadow-lg transition">
           <div className="relative">
             <img
               src={course.image}
@@ -45,12 +45,12 @@ export const CourseList: React.FC<{
               {getStatusText(course.status)}
             </span>
           </div>
-          
-          <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-1">{course.title}</h3>
-          <p className="text-sm text-gray-600 mb-1">Giảng viên: {course.instructor}</p>
-          <p className="text-xs text-gray-500 mb-2">{course.category} • {course.duration}</p>
-          
-          <div className="flex items-center gap-2 text-xs text-gray-600 mb-3">
+
+          <h3 className="text-lg font-semibold text-white mb-1 line-clamp-1">{course.title}</h3>
+          <p className="text-sm text-slate-300 mb-1">Giảng viên: {course.instructor}</p>
+          <p className="text-xs text-slate-400 mb-2">{course.category} • {course.duration}</p>
+
+          <div className="flex items-center gap-2 text-xs text-slate-300 mb-3">
             <span>⭐ {course.rating > 0 ? course.rating : 'N/A'}</span>
             <span>•</span>
             <span>{course.students} học viên</span>
@@ -58,10 +58,10 @@ export const CourseList: React.FC<{
             <span>${course.revenue.toLocaleString()}</span>
           </div>
 
-          <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
+          <div className="flex items-center gap-2 pt-3 border-t border-slate-600">
             <button
               onClick={() => onViewDetail(course)}
-              className="flex-1 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition text-sm font-medium flex items-center justify-center gap-1"
+              className="flex-1 px-3 py-1.5 bg-violet-600/20 text-violet-400 border border-violet-600/30 rounded-lg hover:bg-violet-600/30 transition text-sm font-medium flex items-center justify-center gap-1"
             >
               <Eye className="w-4 h-4" />
               Chi tiết
@@ -71,17 +71,17 @@ export const CourseList: React.FC<{
               <>
                 <button
                   onClick={() => onApprove(course.id)}
-                  className="p-1.5 bg-green-100 hover:bg-green-200 rounded-lg transition"
+                  className="p-1.5 bg-green-600/20 hover:bg-green-600/30 border border-green-600/30 rounded-lg transition"
                   title="Phê duyệt"
                 >
-                  <CheckCircle className="w-4 h-4 text-green-700" />
+                  <CheckCircle className="w-4 h-4 text-green-400" />
                 </button>
                 <button
                   onClick={() => onReject(course.id)}
-                  className="p-1.5 bg-red-100 hover:bg-red-200 rounded-lg transition"
+                  className="p-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-600/30 rounded-lg transition"
                   title="Từ chối"
                 >
-                  <XCircle className="w-4 h-4 text-red-700" />
+                  <XCircle className="w-4 h-4 text-red-400" />
                 </button>
               </>
             )}
@@ -89,33 +89,32 @@ export const CourseList: React.FC<{
             {(course.status === 'active' || course.status === 'inactive') && (
               <button
                 onClick={() => onToggleStatus(course.id)}
-                className={`p-1.5 rounded-lg transition ${
-                  course.status === 'active' 
-                    ? 'bg-gray-100 hover:bg-gray-200' 
-                    : 'bg-green-100 hover:bg-green-200'
-                }`}
+                className={`p-1.5 rounded-lg transition border ${course.status === 'active'
+                    ? 'bg-slate-600/20 hover:bg-slate-600/30 border-slate-600/30'
+                    : 'bg-green-600/20 hover:bg-green-600/30 border-green-600/30'
+                  }`}
                 title={course.status === 'active' ? 'Tạm ẩn' : 'Kích hoạt'}
               >
-                {course.status === 'active' 
-                  ? <Lock className="w-4 h-4 text-gray-700" />
-                  : <Unlock className="w-4 h-4 text-green-700" />
+                {course.status === 'active'
+                  ? <Lock className="w-4 h-4 text-slate-400" />
+                  : <Unlock className="w-4 h-4 text-green-400" />
                 }
               </button>
             )}
 
             <button
               onClick={() => onEdit(course)}
-              className="p-1.5 hover:bg-gray-200 rounded-lg transition"
+              className="p-1.5 hover:bg-slate-600/30 rounded-lg transition border border-slate-600/30"
               title="Chỉnh sửa"
             >
-              <Edit className="w-4 h-4 text-gray-600" />
+              <Edit className="w-4 h-4 text-slate-300" />
             </button>
             <button
               onClick={() => onDelete(course.id)}
-              className="p-1.5 hover:bg-red-100 rounded-lg transition"
+              className="p-1.5 hover:bg-red-600/20 rounded-lg transition border border-red-600/30"
               title="Xóa"
             >
-              <Trash2 className="w-4 h-4 text-red-600" />
+              <Trash2 className="w-4 h-4 text-red-400" />
             </button>
           </div>
         </div>

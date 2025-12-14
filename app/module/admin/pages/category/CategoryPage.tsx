@@ -9,20 +9,20 @@ const CategoryPage: React.FC = () => {
   const [mode, setMode] = useState<"list" | "add" | "edit">("list");
   const [selectedCategory, setSelectedCategory] = useState<CategoryDetail | null>(null);
   const { confirm } = useConfirmDialog();
-  
-  const { 
-    categories, 
-    loading, 
-    error, 
-    deleteCategory, 
-    createCategory, 
+
+  const {
+    categories,
+    loading,
+    error,
+    deleteCategory,
+    createCategory,
     updateCategory,
     isDeleting
   } = useCategoryAdmin();
 
 
-  if (loading) return <p className="text-black">Đang tải danh mục...</p>;
-  if (error) return <p className="text-red-500">Lỗi: {error}</p>;
+  if (loading) return <p className="text-slate-300">Đang tải danh mục...</p>;
+  if (error) return <p className="text-red-400">Lỗi: {error}</p>;
 
   // 🔥 Hàm xóa danh mục
   const handleDelete = async (id: string) => {
@@ -34,7 +34,7 @@ const CategoryPage: React.FC = () => {
 
   // 🔥 Hàm thêm hoặc cập nhật danh mục
   const handleSave = async (data: {
-    id: string ;
+    id: string;
     name: string;
     description: string;
     parentId?: string | null;
@@ -42,7 +42,7 @@ const CategoryPage: React.FC = () => {
     isActive: boolean;
   }) => {
     const requestData = {
-      id: data.id,      
+      id: data.id,
       name: data.name,
       description: data.description,
       parentId: data.parentId,
@@ -71,9 +71,9 @@ const CategoryPage: React.FC = () => {
         category={
           mode === "edit" && selectedCategory
             ? {
-                ...selectedCategory,
-                priority: selectedCategory.sortOrder ?? 0,
-              }
+              ...selectedCategory,
+              priority: selectedCategory.sortOrder ?? 0,
+            }
             : null
         }
         categories={categories}
@@ -90,13 +90,13 @@ const CategoryPage: React.FC = () => {
 
   // Hiển thị danh sách danh mục
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">📂 Danh mục</h2>
+        <h2 className="text-2xl font-bold text-white">📂 Danh mục</h2>
         <button
           onClick={() => setMode("add")}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+          className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-violet-700 hover:to-purple-700 transition"
         >
           <Plus className="w-5 h-5" /> Thêm danh mục
         </button>
@@ -104,9 +104,9 @@ const CategoryPage: React.FC = () => {
 
       {/* Bảng danh sách */}
       <div className="overflow-x-auto">
-        <table className="min-w-full text-left border border-gray-200 rounded-lg overflow-hidden">
+        <table className="min-w-full text-left border border-slate-700 rounded-lg overflow-hidden">
           <thead>
-            <tr className="bg-gray-100 text-gray-800">
+            <tr className="bg-slate-700 text-slate-300">
               <th className="p-3 font-medium">#</th>
               <th className="p-3 font-medium">Tên danh mục</th>
               <th className="p-3 font-medium">Mô tả</th>
@@ -116,14 +116,14 @@ const CategoryPage: React.FC = () => {
               <th className="p-3 text-center font-medium">Hành động</th>
             </tr>
           </thead>
-          <tbody className="text-gray-900">
+          <tbody className="text-white">
             {categories.length > 0 ? (
               categories.map((cat, index) => (
-                <tr key={cat.id} className="border-t border-gray-200 hover:bg-gray-50 transition">
+                <tr key={cat.id} className="border-t border-slate-700 hover:bg-slate-700/50 transition">
                   <td className="p-3">{index + 1}</td>
                   <td className="p-3 font-semibold">{cat.name}</td>
-                  <td className="p-3 text-gray-700">{cat.description}</td>
-                  <td className="p-3 text-gray-600">
+                  <td className="p-3 text-slate-300">{cat.description}</td>
+                  <td className="p-3 text-slate-400">
                     {new Date(cat.createdAt).toLocaleDateString()}
                   </td>
                   <td className="p-3">{getParentName(cat.parentId)}</td>
@@ -134,25 +134,25 @@ const CategoryPage: React.FC = () => {
                         setSelectedCategory(cat);
                         setMode("edit");
                       }}
-                      className="p-2 hover:bg-purple-100 rounded-lg transition"
+                      className="p-2 hover:bg-violet-600/20 rounded-lg transition text-slate-400 hover:text-violet-400"
                       title="Chỉnh sửa"
                     >
-                      <Edit className="w-4 h-4 text-purple-600" />
+                      <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(cat.id)}
                       disabled={isDeleting}
-                      className="p-2 hover:bg-red-100 rounded-lg transition disabled:opacity-50"
+                      className="p-2 hover:bg-red-600/20 rounded-lg transition disabled:opacity-50 text-slate-400 hover:text-red-400"
                       title="Xóa"
                     >
-                      <Trash2 className="w-4 h-4 text-red-600" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="text-center text-gray-500 p-6 italic">
+                <td colSpan={7} className="text-center text-slate-400 p-6 italic">
                   Không có danh mục nào.
                 </td>
               </tr>

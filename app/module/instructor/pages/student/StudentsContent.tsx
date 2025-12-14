@@ -1,95 +1,92 @@
-import { ChevronLeft, ChevronRight, Eye, Grid, List, MessageSquare, Search } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router";
+import { ChevronLeft, ChevronRight, Eye, Grid, List, MessageSquare, Search, Loader2, AlertCircle } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useSearchParams } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { instructorEnrollmentService } from "~/module/instructor/services/EnrollmentApi";
+import type { InstructorStudentEnrollmentDto } from "~/module/instructor/types/enrollment";
+import { formatEnrollmentDate, getEnrollmentStatusColor } from "~/module/instructor/types/enrollment";
 
 const StudentsContent = () => {
+  const [searchParams] = useSearchParams();
+  const courseId = searchParams.get('courseId');
+  
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const studentsPerPage = 5;
+  const studentsPerPage = 10;
 
-  const students = [
-    {
-      id: 'STU020',
-      name: 'Thompson Hicks',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
-      enrollDate: '22 Aug 2025',
-      progress: 0,
-      courses: 10
+  // Fetch students data
+  const {
+    data: enrollments = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery<InstructorStudentEnrollmentDto[]>({
+    queryKey: ['instructor-students', courseId],
+    queryFn: () => {
+      if (courseId) {
+        return instructorEnrollmentService.getCourseStudents(courseId);
+      }
+      return instructorEnrollmentService.getAllStudents();
     },
-    {
-      id: 'STU019',
-      name: 'Jennifer Tovar',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
-      enrollDate: '10 Aug 2025',
-      progress: 15,
-      courses: 8
-    },
-    {
-      id: 'STU018',
-      name: 'James Schulte',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
-      enrollDate: '26 Jul 2025',
-      progress: 60,
-      courses: 12
-    },
-    {
-      id: 'STU017',
-      name: 'Kristy Cardona',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
-      enrollDate: '12 Jul 2025',
-      progress: 20,
-      courses: 17
-    },
-    {
-      id: 'STU016',
-      name: 'William Aragon',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
-      enrollDate: '02 Jul 2025',
-      progress: 10,
-      courses: 9
-    },
-    {
-      id: 'STU015',
-      name: 'Shirley Lis',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80',
-      enrollDate: '25 Jun 2025',
-      progress: 80,
-      courses: 15
-    },
-    {
-      id: 'STU014',
-      name: 'John Brewer',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&q=80',
-      enrollDate: '17 Jun 2025',
-      progress: 40,
-      courses: 13
-    },
-    {
-      id: 'STU013',
-      name: 'Doris Hughes',
-      avatar: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=100&q=80',
-      enrollDate: '04 Jun 2025',
-      progress: 50,
-      courses: 17
-    },
-    {
-      id: 'STU012',
-      name: 'Sarah Martinez',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&q=80',
-      enrollDate: '20 May 2025',
-      progress: 20,
-      courses: 8
-    },
-    {
-      id: 'STU011',
-      name: 'Sarah Martinez',
-      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80',
-      enrollDate: '15 May 2025',
-      progress: 60,
-      courses: 10
-    }
-  ];
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: 2
+  });
+
+  // Transform enrollments to students format for display
+  const students = useMemo(() => {
+    // Group enrollments by studentId to count courses per student
+    const studentMap = new Map<string, {
+      id: string;
+      name: string;
+      avatar: string;
+      enrollDate: string;
+      progress: number;
+      courses: number;
+      enrollmentId: string;
+      studentId: string;
+      email: string;
+    }>();
+
+    enrollments.forEach((enrollment) => {
+      const existing = studentMap.get(enrollment.studentId);
+      if (existing) {
+        // Update if this enrollment is more recent
+        const existingDate = new Date(existing.enrollDate);
+        const newDate = new Date(enrollment.enrolledAt);
+        if (newDate > existingDate) {
+          studentMap.set(enrollment.studentId, {
+            id: enrollment.studentId.substring(0, 8).toUpperCase(),
+            name: enrollment.studentFullName,
+            avatar: enrollment.studentAvatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
+            enrollDate: formatEnrollmentDate(enrollment.enrolledAt),
+            progress: Math.round(enrollment.progressPercentage),
+            courses: existing.courses + 1,
+            enrollmentId: enrollment.enrollmentId,
+            studentId: enrollment.studentId,
+            email: enrollment.studentEmail
+          });
+        } else {
+          // Just increment course count
+          existing.courses += 1;
+        }
+      } else {
+        studentMap.set(enrollment.studentId, {
+          id: enrollment.studentId.substring(0, 8).toUpperCase(),
+          name: enrollment.studentFullName,
+          avatar: enrollment.studentAvatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
+          enrollDate: formatEnrollmentDate(enrollment.enrolledAt),
+          progress: Math.round(enrollment.progressPercentage),
+          courses: 1,
+          enrollmentId: enrollment.enrollmentId,
+          studentId: enrollment.studentId,
+          email: enrollment.studentEmail
+        });
+      }
+    });
+
+    return Array.from(studentMap.values());
+  }, [enrollments]);
 
   const getProgressColor = (progress: number) => {
     if (progress === 0) return 'bg-violet-400';
@@ -99,17 +96,6 @@ const StudentsContent = () => {
     return 'bg-purple-600';
   };
 
-  // Filter students by search query
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
-  const paginatedStudents = filteredStudents.slice(
-    (currentPage - 1) * studentsPerPage,
-    currentPage * studentsPerPage
-  );
 
   const handleView = (id: string) => {
     console.log(`Viewing student with ID: ${id}`);
@@ -121,13 +107,87 @@ const StudentsContent = () => {
     // TODO: Implement messaging functionality
   };
 
+  // Filter students by search query
+  const filteredStudents = useMemo(() => {
+    return students.filter(student =>
+      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.id.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [students, searchQuery]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
+  const paginatedStudents = filteredStudents.slice(
+    (currentPage - 1) * studentsPerPage,
+    currentPage * studentsPerPage
+  );
+
+  // Reset to page 1 when search changes or total pages changes
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [searchQuery, totalPages, currentPage]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
+        <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-violet-400 animate-spin mx-auto mb-4" />
+            <p className="text-slate-300">Đang tải danh sách học viên...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-red-700 shadow-md p-6">
+            <div className="flex items-center gap-4">
+              <AlertCircle className="w-8 h-8 text-red-400" />
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">Lỗi tải danh sách học viên</h3>
+                <p className="text-red-400">
+                  {error instanceof Error ? error.message : 'Không thể tải danh sách học viên'}
+                </p>
+                <button
+                  onClick={() => refetch()}
+                  className="mt-4 bg-violet-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-violet-700 transition"
+                >
+                  Thử lại
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 shadow-md p-6 mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
-            <h1 className="text-lg font-bold text-white">Students</h1>
+            <div>
+              <h1 className="text-lg font-bold text-white">Students</h1>
+              {courseId && (
+                <p className="text-sm text-slate-400 mt-1">
+                  Hiển thị học viên của khóa học cụ thể
+                </p>
+              )}
+              <p className="text-sm text-slate-400 mt-1">
+                Tổng số: {students.length} học viên
+              </p>
+            </div>
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={() => setViewMode('list')}
@@ -166,7 +226,23 @@ const StudentsContent = () => {
         </div>
 
         {/* Students Display */}
-        {viewMode === 'list' ? (
+        {filteredStudents.length === 0 ? (
+          <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 shadow-md p-12">
+            <div className="text-center">
+              <AlertCircle className="w-16 h-16 text-slate-500 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">
+                {searchQuery ? 'Không tìm thấy học viên' : 'Chưa có học viên nào'}
+              </h3>
+              <p className="text-slate-400">
+                {searchQuery 
+                  ? `Không có học viên nào khớp với "${searchQuery}"`
+                  : courseId 
+                    ? 'Khóa học này chưa có học viên đăng ký'
+                    : 'Bạn chưa có học viên nào đăng ký các khóa học của mình'}
+              </p>
+            </div>
+          </div>
+        ) : viewMode === 'list' ? (
           <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 shadow-md overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -250,7 +326,8 @@ const StudentsContent = () => {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between p-6 border-t border-slate-600">
+            {totalPages > 0 && (
+              <div className="flex items-center justify-between p-6 border-t border-slate-600">
               <p className="text-sm text-slate-400">Page {currentPage} of {totalPages}</p>
               <div className="flex items-center gap-2">
                 <button
@@ -282,6 +359,7 @@ const StudentsContent = () => {
                 </button>
               </div>
             </div>
+            )}
           </div>
         ) : (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">

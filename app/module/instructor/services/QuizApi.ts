@@ -1,22 +1,25 @@
-import httpClient from '~/services/httpClient'
 import type {
   BaseResponse,
   CreateQuizDto,
   CreateQuizQuestionDto,
+  InstructorQuizListItemDto,
+  LeaderboardDto,
+  PagedResult,
+  QuizAttemptDetailDto,
+  QuizAttemptResultDto,
+  QuizAttemptSummaryDto,
   QuizDetailDto,
   QuizDto,
   QuizForAttemptDto,
   QuizListDto,
   QuizSearchDto,
+  QuizStatsDto,
   QuizSummaryDto,
-  PagedResult,
-  UpdateQuizDto,
-  QuizAttemptDetailDto,
-  QuizAttemptSummaryDto,
   SaveAnswerDto,
   SubmitQuizAttemptDto,
-  StartQuizAttemptDto,
+  UpdateQuizDto
 } from '~/module/instructor/types/Quiz'
+import httpClient from '~/services/httpClient'
 
 export const quizService = {
   // ==================== Quiz CRUD Operations ====================
@@ -69,7 +72,7 @@ export const quizService = {
     if (searchDto.searchTerm) params.append('searchTerm', searchDto.searchTerm)
     if (searchDto.lessonId) params.append('lessonId', searchDto.lessonId)
     if (searchDto.courseId) params.append('courseId', searchDto.courseId)
-    if (searchDto.isPublished !== undefined)
+    if (searchDto.isPublished !== undefined && searchDto.isPublished !== null)
       params.append('isPublished', searchDto.isPublished.toString())
     if (searchDto.page) params.append('page', searchDto.page.toString())
     if (searchDto.pageSize) params.append('pageSize', searchDto.pageSize.toString())
@@ -306,43 +309,11 @@ export const quizService = {
     return httpClient.post(`/quiz/attempt/${attemptId}/abandon`).then((res) => res.data)
   },
 
-  // ==================== Statistics & Analytics ====================
-
-  /**
-   * Get quiz statistics (Instructor only)
-   */
-  getQuizStats: (quizId: string): Promise<BaseResponse<any>> => {
-    return httpClient.get(`/quiz/${quizId}/stats`).then((res) => res.data)
-  },
-
-  /**
-   * Get quiz leaderboard
-   */
-  getQuizLeaderboard: (quizId: string, top: number = 10): Promise<BaseResponse<any>> => {
-    return httpClient.get(`/quiz/${quizId}/leaderboard?top=${top}`).then((res) => res.data)
-  },
-
   /**
    * Get my recent attempts
    */
   getMyRecentAttempts: (count: number = 10): Promise<BaseResponse<QuizAttemptSummaryDto[]>> => {
     return httpClient.get(`/quiz/my-recent-attempts?count=${count}`).then((res) => res.data)
-  },
-
-  // ==================== Instructor Specific ====================
-
-  /**
-   * Get my quizzes
-   */
-  getMyQuizzes: (): Promise<BaseResponse<QuizListDto[]>> => {
-    return httpClient.get('/quiz/my-quizzes').then((res) => res.data)
-  },
-
-  /**
-   * Get unpublished quizzes
-   */
-  getUnpublishedQuizzes: (): Promise<BaseResponse<QuizListDto[]>> => {
-    return httpClient.get('/quiz/unpublished').then((res) => res.data)
   },
 
   // ==================== Student Specific ====================
@@ -367,6 +338,48 @@ export const quizService = {
     topic: string
   }): Promise<BaseResponse<any>> => {
     return httpClient.post('/Quiz/generate-quiz', data).then((res) => res.data)
+  },
+
+  // ==================== Quiz Results API for Instructor ====================
+
+  /**
+   * Get all attempts for a quiz
+   * GET /api/quiz/{quizId}/attempts
+   */
+  getQuizAttempts: (quizId: string): Promise<BaseResponse<QuizAttemptResultDto[]>> => {
+    return httpClient.get(`/quiz/${quizId}/attempts`).then((res) => res.data)
+  },
+
+  /**
+   * Get quiz statistics
+   * GET /api/quiz/{quizId}/stats
+   */
+  getQuizStats: (quizId: string): Promise<BaseResponse<QuizStatsDto>> => {
+    return httpClient.get(`/quiz/${quizId}/stats`).then((res) => res.data)
+  },
+
+  /**
+   * Get quiz leaderboard
+   * GET /api/quiz/{quizId}/leaderboard?top={top}
+   */
+  getQuizLeaderboard: (quizId: string, top: number = 10): Promise<BaseResponse<LeaderboardDto>> => {
+    return httpClient.get(`/quiz/${quizId}/leaderboard?top=${top}`).then((res) => res.data)
+  },
+
+  /**
+   * Get my quizzes (for instructor)
+   * GET /api/quiz/my-quizzes
+   */
+  getMyQuizzes: (): Promise<BaseResponse<InstructorQuizListItemDto[]>> => {
+    return httpClient.get('/quiz/my-quizzes').then((res) => res.data)
+  },
+
+  /**
+   * Get unpublished quizzes
+   * GET /api/quiz/unpublished
+   */
+  getUnpublishedQuizzes: (): Promise<BaseResponse<InstructorQuizListItemDto[]>> => {
+    return httpClient.get('/quiz/unpublished').then((res) => res.data)
   },
 }
 

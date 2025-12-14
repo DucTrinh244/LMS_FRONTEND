@@ -1,127 +1,137 @@
-import { Award, CheckCircle, ChevronDown, Clock, Eye, Search, TrendingDown, TrendingUp, XCircle } from 'lucide-react'
-import { useState } from 'react'
-
-interface QuizResult {
-  id: string
-  studentName: string
-  studentEmail: string
-  quizTitle: string
-  courseName: string
-  score: number
-  totalPoints: number
-  percentage: number
-  timeSpent: number // in minutes
-  submittedAt: string
-  status: 'passed' | 'failed'
-  attempts: number
-}
-
-interface QuizAnalytics {
-  quizId: string
-  quizTitle: string
-  totalAttempts: number
-  averageScore: number
-  passRate: number
-  highestScore: number
-  lowestScore: number
-}
+import { Award, CheckCircle, ChevronDown, Clock, Eye, Search, TrendingDown, TrendingUp, XCircle, Loader2, AlertCircle } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { quizService } from '~/module/instructor/services/QuizApi'
+import type { QuizAttemptResultDto, QuizStatsDto, InstructorQuizListItemDto } from '~/module/instructor/types/Quiz'
+import { useToast } from '~/shared/hooks/useToast'
 
 const QuizResultsContent = () => {
-  const [results, setResults] = useState<QuizResult[]>([
-    {
-      id: '1',
-      studentName: 'John Doe',
-      studentEmail: 'john@example.com',
-      quizTitle: 'React Fundamentals - Chapter 1',
-      courseName: 'React Fundamentals',
-      score: 85,
-      totalPoints: 100,
-      percentage: 85,
-      timeSpent: 25,
-      submittedAt: '2025-01-15 14:30',
-      status: 'passed',
-      attempts: 1,
+  const { toast } = useToast()
+  
+  // Fetch instructor's quizzes
+  const {
+    data: quizzes = [],
+    isLoading: quizzesLoading,
+    error: quizzesError
+  } = useQuery<InstructorQuizListItemDto[]>({
+    queryKey: ['instructor-quizzes'],
+    queryFn: async () => {
+      const res = await quizService.getMyQuizzes()
+      if (res.isSuccess && res.value) {
+        return res.value
+      }
+      throw new Error(res.error?.message || 'Failed to fetch quizzes')
     },
-    {
-      id: '2',
-      studentName: 'Jane Smith',
-      studentEmail: 'jane@example.com',
-      quizTitle: 'React Fundamentals - Chapter 1',
-      courseName: 'React Fundamentals',
-      score: 65,
-      totalPoints: 100,
-      percentage: 65,
-      timeSpent: 28,
-      submittedAt: '2025-01-15 15:45',
-      status: 'failed',
-      attempts: 2,
-    },
-    {
-      id: '3',
-      studentName: 'Mike Johnson',
-      studentEmail: 'mike@example.com',
-      quizTitle: 'JavaScript ES6+ Quiz',
-      courseName: 'Advanced JavaScript',
-      score: 140,
-      totalPoints: 150,
-      percentage: 93,
-      timeSpent: 40,
-      submittedAt: '2025-01-14 10:20',
-      status: 'passed',
-      attempts: 1,
-    },
-    {
-      id: '4',
-      studentName: 'Sarah Wilson',
-      studentEmail: 'sarah@example.com',
-      quizTitle: 'JavaScript ES6+ Quiz',
-      courseName: 'Advanced JavaScript',
-      score: 120,
-      totalPoints: 150,
-      percentage: 80,
-      timeSpent: 42,
-      submittedAt: '2025-01-14 11:15',
-      status: 'passed',
-      attempts: 1,
-    },
-  ])
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: 2
+  })
 
-  const [analytics] = useState<QuizAnalytics[]>([
-    {
-      quizId: '1',
-      quizTitle: 'React Fundamentals - Chapter 1',
-      totalAttempts: 45,
-      averageScore: 75.5,
-      passRate: 78,
-      highestScore: 100,
-      lowestScore: 45,
+  // Fetch stats for all quizzes
+  const quizStatsQueries = useQuery({
+    queryKey: ['quiz-stats', quizzes.map(q => q.id)],
+    queryFn: async () => {
+      const statsPromises = quizzes.map(async (quiz) => {
+        try {
+          const res = await quizService.getQuizStats(quiz.id)
+          if (res.isSuccess && res.value) {
+            return { quizId: quiz.id, stats: res.value }
+          }
+          return null
+        } catch (error) {
+          console.error(`Error fetching stats for quiz ${quiz.id}:`, error)
+          return null
+        }
+      })
+      const results = await Promise.all(statsPromises)
+      return results.filter(Boolean) as Array<{ quizId: string; stats: QuizStatsDto }>
     },
-    {
-      quizId: '2',
-      quizTitle: 'JavaScript ES6+ Quiz',
-      totalAttempts: 38,
-      averageScore: 82.3,
-      passRate: 85,
-      highestScore: 148,
-      lowestScore: 60,
+    enabled: quizzes.length > 0,
+    staleTime: 2 * 60 * 1000
+  })
+
+  // Fetch attempts for all quizzes
+  const quizAttemptsQueries = useQuery({
+    queryKey: ['quiz-attempts', quizzes.map(q => q.id)],
+    queryFn: async () => {
+      const attemptsPromises = quizzes.map(async (quiz) => {
+        try {
+          const res = await quizService.getQuizAttempts(quiz.id)
+          if (res.isSuccess && res.value) {
+            return res.value.map(attempt => ({
+              ...attempt,
+              quizTitle: quiz.title,
+              courseName: quiz.courseTitle
+            }))
+          }
+          return []
+        } catch (error) {
+          console.error(`Error fetching attempts for quiz ${quiz.id}:`, error)
+          return []
+        }
+      })
+      const results = await Promise.all(attemptsPromises)
+      return results.flat()
     },
-  ])
+    enabled: quizzes.length > 0,
+    staleTime: 2 * 60 * 1000
+  })
+
+  // Transform data for display
+  const analytics = useMemo(() => {
+    if (!quizStatsQueries.data) return []
+    return quizStatsQueries.data.map(({ stats }) => ({
+      quizId: stats.quizId,
+      quizTitle: stats.title,
+      totalAttempts: stats.totalAttempts,
+      averageScore: stats.averageScore,
+      passRate: stats.passRate,
+      highestScore: stats.highestScore,
+      lowestScore: stats.lowestScore
+    }))
+  }, [quizStatsQueries.data])
+
+  const results = useMemo(() => {
+    if (!quizAttemptsQueries.data) return []
+    return quizAttemptsQueries.data.map((attempt) => ({
+      id: attempt.id,
+      studentName: attempt.userName,
+      studentEmail: '', // Not available in API
+      quizTitle: attempt.quizTitle,
+      courseName: (attempt as any).courseName || '',
+      score: attempt.score,
+      totalPoints: attempt.totalPoints,
+      percentage: attempt.percentage,
+      timeSpent: Math.round(attempt.timeSpentSeconds / 60), // Convert to minutes
+      submittedAt: attempt.completedAt 
+        ? new Date(attempt.completedAt).toLocaleString('vi-VN')
+        : new Date(attempt.startedAt).toLocaleString('vi-VN'),
+      status: attempt.isPassed ? 'passed' : 'failed' as 'passed' | 'failed',
+      attempts: 1 // Not available in API response
+    }))
+  }, [quizAttemptsQueries.data])
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedQuiz, setSelectedQuiz] = useState('All')
   const [selectedStatus, setSelectedStatus] = useState('All')
   const [showDetailModal, setShowDetailModal] = useState(false)
-  const [selectedResult, setSelectedResult] = useState<QuizResult | null>(null)
+  const [selectedResult, setSelectedResult] = useState<typeof results[0] | null>(null)
 
-  const filteredResults = results
-    .filter((result) =>
-      result.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      result.quizTitle.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .filter((result) => selectedQuiz === 'All' || result.quizTitle === selectedQuiz)
-    .filter((result) => selectedStatus === 'All' || result.status === selectedStatus)
+  const filteredResults = useMemo(() => {
+    return results
+      .filter((result) =>
+        result.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        result.quizTitle.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .filter((result) => selectedQuiz === 'All' || result.quizTitle === selectedQuiz)
+      .filter((result) => selectedStatus === 'All' || result.status === selectedStatus)
+  }, [results, searchQuery, selectedQuiz, selectedStatus])
 
-  const uniqueQuizzes = Array.from(new Set(results.map((r) => r.quizTitle)))
+  const uniqueQuizzes = useMemo(() => {
+    return Array.from(new Set(results.map((r) => r.quizTitle)))
+  }, [results])
+
+  const isLoading = quizzesLoading || quizStatsQueries.isLoading || quizAttemptsQueries.isLoading
+  const hasError = quizzesError || quizStatsQueries.error || quizAttemptsQueries.error
 
   const handleViewDetails = (result: QuizResult) => {
     setSelectedResult(result)
@@ -152,6 +162,50 @@ const QuizResultsContent = () => {
     return 'text-red-400'
   }
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
+        <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-violet-400 animate-spin mx-auto mb-4" />
+            <p className="text-slate-300">Đang tải kết quả quiz...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-red-700 shadow-md p-6">
+            <div className="flex items-center gap-4">
+              <AlertCircle className="w-8 h-8 text-red-400" />
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">Lỗi tải dữ liệu</h3>
+                <p className="text-red-400">
+                  {hasError instanceof Error ? hasError.message : 'Không thể tải kết quả quiz'}
+                </p>
+                <button
+                  onClick={() => {
+                    quizStatsQueries.refetch()
+                    quizAttemptsQueries.refetch()
+                  }}
+                  className="mt-4 bg-violet-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-violet-700 transition"
+                >
+                  Thử lại
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 p-8">
       <div className="max-w-7xl mx-auto">
@@ -165,8 +219,17 @@ const QuizResultsContent = () => {
         </div>
 
         {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {analytics.map((quiz) => (
+        {analytics.length === 0 ? (
+          <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 shadow-md p-12 mb-8">
+            <div className="text-center">
+              <Award className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Chưa có quiz nào</h3>
+              <p className="text-slate-400">Bạn chưa tạo quiz nào hoặc chưa có học viên làm bài</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {analytics.map((quiz) => (
             <div
               key={quiz.quizId}
               className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6 hover:border-slate-600 transition"
@@ -196,8 +259,9 @@ const QuizResultsContent = () => {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

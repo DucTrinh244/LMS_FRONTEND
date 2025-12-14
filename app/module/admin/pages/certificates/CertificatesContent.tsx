@@ -70,60 +70,60 @@ const CertificatesContent: React.FC = () => {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg p-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
-              <Award className="w-7 h-7 text-purple-600" />
+            <div className="w-14 h-14 bg-purple-600/20 rounded-xl flex items-center justify-center">
+              <Award className="w-7 h-7 text-purple-400" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
-              <div className="text-sm font-medium text-gray-600">Total Certificates</div>
+              <div className="text-3xl font-bold text-white">{stats.total}</div>
+              <div className="text-sm font-medium text-slate-400">Total Certificates</div>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg p-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center">
-              <CheckCircle className="w-7 h-7 text-green-600" />
+            <div className="w-14 h-14 bg-green-600/20 rounded-xl flex items-center justify-center">
+              <CheckCircle className="w-7 h-7 text-green-400" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">{stats.issued}</div>
-              <div className="text-sm font-medium text-gray-600">Issued</div>
+              <div className="text-3xl font-bold text-white">{stats.issued}</div>
+              <div className="text-sm font-medium text-slate-400">Issued</div>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg p-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Calendar className="w-7 h-7 text-blue-600" />
+            <div className="w-14 h-14 bg-blue-600/20 rounded-xl flex items-center justify-center">
+              <Calendar className="w-7 h-7 text-blue-400" />
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">{stats.thisMonth}</div>
-              <div className="text-sm font-medium text-gray-600">This Month</div>
+              <div className="text-3xl font-bold text-white">{stats.thisMonth}</div>
+              <div className="text-sm font-medium text-slate-400">This Month</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Certificates Management</h2>
-            <p className="text-gray-600">Manage certificates issued to students</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Certificates Management</h2>
+            <p className="text-slate-400">Manage certificates issued to students</p>
           </div>
           <div className="flex gap-3">
             <div className="relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search certificates..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full md:w-64 pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent text-white placeholder-slate-400"
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+            <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition">
               <Filter className="w-5 h-5" />
               Filter
             </button>
@@ -135,9 +135,9 @@ const CertificatesContent: React.FC = () => {
           {filteredCertificates.map((certificate) => (
             <div
               key={certificate.id}
-              className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition"
+              className="bg-slate-700/50 border border-slate-600 rounded-xl overflow-hidden hover:border-slate-500 hover:shadow-lg transition"
             >
-              <div className="relative h-32 bg-gradient-to-br from-purple-500 to-pink-500">
+              <div className="relative h-32 bg-gradient-to-br from-purple-600 to-pink-600">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Award className="w-16 h-16 text-white opacity-50" />
                 </div>
@@ -153,8 +153,8 @@ const CertificatesContent: React.FC = () => {
                     className="w-10 h-10 rounded-full object-cover"
                   />
                   <div className="flex-1">
-                    <div className="font-semibold text-gray-900">{certificate.student}</div>
-                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                    <div className="font-semibold text-white">{certificate.student}</div>
+                    <div className="text-xs text-slate-400 flex items-center gap-1">
                       <User className="w-3 h-3" />
                       Student
                     </div>
@@ -162,25 +162,25 @@ const CertificatesContent: React.FC = () => {
                 </div>
                 <div className="mb-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <BookOpen className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-semibold text-gray-900 line-clamp-1">{certificate.course}</span>
+                    <BookOpen className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm font-semibold text-white line-clamp-1">{certificate.course}</span>
                   </div>
-                  <div className="text-xs text-gray-500">Instructor: {certificate.instructor}</div>
+                  <div className="text-xs text-slate-400">Instructor: {certificate.instructor}</div>
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
                     {new Date(certificate.issueDate).toLocaleDateString()}
                   </div>
-                  <span className="font-mono">{certificate.certificateId}</span>
+                  <span className="font-mono text-slate-300">{certificate.certificateId}</span>
                 </div>
                 <div className="flex gap-2">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
+                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition text-sm">
                     <Eye className="w-4 h-4" />
                     View
                   </button>
-                  <button className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                    <Download className="w-4 h-4 text-gray-600" />
+                  <button className="flex items-center justify-center gap-2 px-3 py-2 border border-slate-600 rounded-lg hover:bg-slate-700 transition">
+                    <Download className="w-4 h-4 text-slate-300" />
                   </button>
                 </div>
               </div>
@@ -189,8 +189,8 @@ const CertificatesContent: React.FC = () => {
         </div>
         {filteredCertificates.length === 0 && (
           <div className="text-center py-12">
-            <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No certificates found</p>
+            <Award className="w-16 h-16 text-slate-500 mx-auto mb-4" />
+            <p className="text-slate-400">No certificates found</p>
           </div>
         )}
       </div>

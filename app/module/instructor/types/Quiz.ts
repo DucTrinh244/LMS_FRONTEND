@@ -272,3 +272,110 @@ export interface PagedResult<T> {
   totalPages: number
 }
 
+// Quiz Result API Types for Instructor
+
+/**
+ * Quiz Attempt Result for Instructor
+ */
+export interface QuizAttemptResultDto {
+  id: string
+  quizId: string
+  quizTitle: string
+  userId: string
+  userName: string
+  score: number
+  totalPoints: number
+  percentage: number
+  isPassed: boolean
+  startedAt: string
+  completedAt: string | null
+  timeSpentSeconds: number
+  status: 'InProgress' | 'Completed' | 'Abandoned'
+  createdAt: string
+}
+
+/**
+ * Quiz Statistics DTO
+ */
+export interface QuizStatsDto {
+  quizId: string
+  title: string
+  totalAttempts: number
+  uniqueUsers: number
+  passedCount: number
+  failedCount: number
+  averageScore: number
+  highestScore: number
+  lowestScore: number
+  averageTimeSpentSeconds: number
+  passRate: number
+  questionStats: QuestionStatsDto[]
+}
+
+/**
+ * Question Statistics DTO
+ */
+export interface QuestionStatsDto {
+  questionId: string
+  questionText: string
+  totalAnswered: number
+  correctCount: number
+  correctRate: number
+  answerStats: AnswerStatsDto[]
+}
+
+/**
+ * Answer Statistics DTO
+ */
+export interface AnswerStatsDto {
+  answerId: string
+  answerText: string
+  isCorrect: boolean
+  selectionCount: number
+  selectionRate: number
+}
+
+/**
+ * Leaderboard Entry DTO
+ */
+export interface LeaderboardEntryDto {
+  rank: number
+  userId: string
+  userName: string
+  avatarUrl: string | null
+  bestScore: number
+  attemptsCount: number
+  bestTimeSpentSeconds: number
+  bestAttemptDate: string
+}
+
+/**
+ * Leaderboard DTO
+ */
+export interface LeaderboardDto {
+  quizId: string
+  quizTitle: string
+  entries: LeaderboardEntryDto[]
+}
+
+/**
+ * Instructor Quiz List Item (with stats)
+ */
+export interface InstructorQuizListItemDto {
+  id: string
+  lessonId: string
+  lessonTitle: string
+  courseId: string
+  courseTitle: string
+  title: string
+  description: string | null
+  timeLimit: number
+  passingScore: number
+  questionCount: number
+  totalPoints: number
+  isPublished: boolean
+  totalAttempts: number
+  createdAt: string
+  updatedAt: string
+}
+

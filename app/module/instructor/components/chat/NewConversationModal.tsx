@@ -1,5 +1,5 @@
+import { ArrowLeft, Mail, X } from 'lucide-react'
 import React, { useState } from 'react'
-import { Users, ArrowLeft, Check } from 'lucide-react'
 import { chatService } from '~/module/instructor/services/ChatApi'
 import type { User } from '~/module/instructor/types/Chat'
 import { useToast } from '~/shared/hooks/useToast'
@@ -30,14 +30,15 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
   const [isPrivate, setIsPrivate] = useState(false)
   const [createdGroupId, setCreatedGroupId] = useState<string | null>(null)
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
+  const [emailInput, setEmailInput] = useState('')
+  const [emailList, setEmailList] = useState<string[]>([])
   const [isCreatingGroup, setIsCreatingGroup] = useState(false)
   const [isAddingUsers, setIsAddingUsers] = useState(false)
 
   // Handle create group (Step 1)
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!groupName.trim()) {
       toast.error('Vui lòng nhập tên nhóm')
       return
@@ -50,7 +51,7 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
         groupDescription.trim() || undefined,
         isPrivate
       )
-      
+
       setCreatedGroupId(group.id)
       setStep('addUsers')
       toast.success('Tạo nhóm thành công! Bây giờ bạn có thể thêm thành viên.')
@@ -62,21 +63,73 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
     }
   }
 
+  // Handle add email to list
+  const handleAddEmail = () => {
+    const email = emailInput.trim()
+
+    if (!email) {
+      toast.error('Vui lòng nhập email')
+      return
+    }
+
+    // Strict email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      toast.error('Email không hợp lệ. Vui lòng nhập đầy đủ email (ví dụ: user@example.com)')
+      return
+    }
+
+    // Additional check: ensure it's a real email format
+    if (!email.includes('@') || email.split('@').length !== 2) {
+      toast.error('Email không hợp lệ. Vui lòng nhập đầy đủ email (ví dụ: user@example.com)')
+      return
+    }
+
+    // Check domain part exists and has at least one dot
+    const [, domain] = email.split('@')
+    if (!domain || !domain.includes('.')) {
+      toast.error('Email không hợp lệ. Vui lòng nhập đầy đủ email (ví dụ: user@example.com)')
+      return
+    }
+
+    // Check if email already in list (case-insensitive)
+    const emailLower = email.toLowerCase()
+    if (emailList.includes(emailLower)) {
+      toast.error('Email đã được thêm vào danh sách')
+      return
+    }
+
+    // Store email as-is (lowercase for consistency)
+    setEmailList(prev => [...prev, emailLower])
+    setEmailInput('')
+  }
+
+  const handleRemoveEmail = (emailToRemove: string) => {
+    setEmailList(prev => prev.filter(email => email !== emailToRemove))
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddEmail()
+    }
+  }
+
   // Handle add users (Step 2)
   const handleAddUsers = async () => {
-    if (!createdGroupId || selectedStudents.length === 0) {
-      toast.error('Vui lòng chọn ít nhất một thành viên')
+    if (!createdGroupId || emailList.length === 0) {
+      toast.error('Vui lòng thêm ít nhất một email')
       return
     }
 
     setIsAddingUsers(true)
     try {
-      await chatService.addUsersToGroup(createdGroupId, selectedStudents)
-      toast.success(`Đã thêm ${selectedStudents.length} thành viên vào nhóm!`)
-      
+      await chatService.addUsersToGroupByEmail(createdGroupId, emailList)
+      toast.success(`Đã thêm ${emailList.length} thành viên vào nhóm!`)
+
       // Call onCreateConversation to refresh the list
       onCreateConversation(createdGroupId)
-      
+
       // Reset and close
       handleClose()
     } catch (error: any) {
@@ -103,24 +156,10 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
     setIsPrivate(false)
     setCreatedGroupId(null)
     setSelectedStudents([])
-    setSearchTerm('')
+    setEmailInput('')
+    setEmailList([])
     onClose()
   }
-
-  const toggleStudentSelection = (studentId: string) => {
-    setSelectedStudents(prev => {
-      if (prev.includes(studentId)) {
-        return prev.filter(id => id !== studentId)
-      } else {
-        return [...prev, studentId]
-      }
-    })
-  }
-
-  const filteredStudents = availableStudents.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchTerm.toLowerCase())
-  )
 
   if (!isOpen) return null
 
@@ -146,9 +185,7 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
             onClick={handleClose}
             className="text-slate-400 hover:text-white transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -237,91 +274,59 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
         {step === 'addUsers' && (
           <div className="flex flex-col flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {/* Search users */}
+              {/* Email Input */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {userRole === 'student' ? 'Tìm giảng viên' : 'Tìm học viên'}
+                  {userRole === 'student' ? 'Nhập email giảng viên' : 'Nhập email học viên'}
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Tìm theo tên hoặc email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                  />
-                  <svg 
-                    className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="email"
+                      placeholder="example@email.com"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    />
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  </div>
+                  <button
+                    onClick={handleAddEmail}
+                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                    Thêm
+                  </button>
                 </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Nhấn Enter hoặc click "Thêm" để thêm email vào danh sách
+                </p>
               </div>
 
-              {/* Users list */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  {userRole === 'student' 
-                    ? `Chọn giảng viên (${selectedStudents.length} được chọn)`
-                    : `Chọn học viên (${selectedStudents.length} được chọn)`
-                  }
-                </label>
-                <div className="max-h-64 overflow-y-auto border border-slate-600 rounded-lg">
-                  {filteredStudents.length > 0 ? (
-                    filteredStudents.map((student) => (
+              {/* Email List */}
+              {emailList.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Danh sách email ({emailList.length})
+                  </label>
+                  <div className="max-h-64 overflow-y-auto border border-slate-600 rounded-lg p-2 space-y-2">
+                    {emailList.map((email, index) => (
                       <div
-                        key={student.id}
-                        onClick={() => toggleStudentSelection(student.id)}
-                        className="flex items-center space-x-3 p-3 hover:bg-slate-700 cursor-pointer transition-colors"
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg"
                       >
-                        <input
-                          type="checkbox"
-                          checked={selectedStudents.includes(student.id)}
-                          onChange={() => {}} // Controlled by onClick above
-                          className="rounded border-slate-600 text-violet-600 focus:ring-violet-500"
-                        />
-                        
-                        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-600 flex items-center justify-center flex-shrink-0">
-                          {student.avatar ? (
-                            <img 
-                              src={student.avatar} 
-                              alt={student.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-xs font-medium text-white">
-                              {student.name.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">
-                            {student.name}
-                          </p>
-                          <p className="text-xs text-slate-400 truncate">
-                            {student.email}
-                          </p>
-                        </div>
-                        
-                        {student.isOnline && (
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        )}
+                        <span className="text-sm text-white">{email}</span>
+                        <button
+                          onClick={() => handleRemoveEmail(email)}
+                          className="text-slate-400 hover:text-red-400 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
-                    ))
-                  ) : (
-                    <div className="p-6 text-center text-slate-400">
-                      <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">
-                        {userRole === 'student' ? 'Không tìm thấy giảng viên' : 'Không tìm thấy học viên'}
-                      </p>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Footer */}
@@ -344,7 +349,7 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
                 <button
                   type="button"
                   onClick={handleAddUsers}
-                  disabled={selectedStudents.length === 0 || isAddingUsers}
+                  disabled={emailList.length === 0 || isAddingUsers}
                   className="px-6 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   {isAddingUsers ? (
@@ -357,7 +362,9 @@ const NewConversationModal: React.FC<NewConversationModalProps> = ({
                     </>
                   ) : (
                     <>
-                      <Check className="w-4 h-4" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
                       <span>Thêm thành viên</span>
                     </>
                   )}

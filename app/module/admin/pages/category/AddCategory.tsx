@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 interface AddCategoryProps {
   onBack: () => void;
   onSave: (category: {
-    id: string ;
+    id: string;
     name: string;
     description: string;
     parentId?: string | null;
@@ -71,7 +71,7 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -94,20 +94,20 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
   };
 
   const inputClass = (hasError?: boolean) =>
-    `w-full border rounded-lg px-3 py-2 bg-gray-100 text-black placeholder:text-gray-500 
-    focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition
-    ${hasError ? "border-red-500" : "border-gray-300"}`;
+    `w-full border rounded-lg px-3 py-2 bg-slate-700 text-white placeholder:text-slate-400 
+    focus:ring-2 focus:ring-violet-500 focus:border-violet-500 focus:outline-none transition
+    ${hasError ? "border-red-500" : "border-slate-600"}`;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">
+    <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg p-6">
+      <h2 className="text-2xl font-bold text-white mb-4">
         {category ? "✏️ Chỉnh sửa danh mục" : "➕ Thêm danh mục mới"}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Category Name */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">
-            Tên danh mục <span className="text-red-500">*</span>
+          <label className="block text-slate-300 font-medium mb-1">
+            Tên danh mục <span className="text-red-400">*</span>
           </label>
           <input
             type="text"
@@ -123,13 +123,13 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
             disabled={loading}
           />
           {errors.name && (
-            <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+            <p className="text-red-400 text-sm mt-1">{errors.name}</p>
           )}
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">
+          <label className="block text-slate-300 font-medium mb-1">
             Mô tả
           </label>
           <textarea
@@ -143,7 +143,7 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
 
         {/* Parent Category */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">
+          <label className="block text-slate-300 font-medium mb-1">
             Danh mục cha
           </label>
           <select
@@ -165,8 +165,8 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
 
         {/* Sort Order */}
         <div>
-          <label className="block text-gray-700 font-medium mb-1">
-            Thứ tự sắp xếp <span className="text-red-500">*</span>
+          <label className="block text-slate-300 font-medium mb-1">
+            Thứ tự sắp xếp <span className="text-red-400">*</span>
           </label>
           <input
             type="number"
@@ -183,28 +183,28 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
             disabled={loading}
           />
           {errors.sortOrder && (
-            <p className="text-red-500 text-sm mt-1">{errors.sortOrder}</p>
+            <p className="text-red-400 text-sm mt-1">{errors.sortOrder}</p>
           )}
-          <p className="text-gray-500 text-xs mt-1">
+          <p className="text-slate-400 text-xs mt-1">
             Số càng nhỏ, danh mục càng hiển thị ở vị trí trên
           </p>
         </div>
 
         {/* Is Active */}
-        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+        <div className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg">
           <input
             type="checkbox"
             id="isActive"
             checked={isActive}
             onChange={(e) => setIsActive(e.target.checked)}
-            className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 focus:ring-2 cursor-pointer"
+            className="w-5 h-5 text-violet-600 border-slate-600 rounded focus:ring-violet-500 focus:ring-2 cursor-pointer bg-slate-700"
             disabled={loading}
           />
-          <label htmlFor="isActive" className="text-gray-700 font-medium cursor-pointer select-none">
+          <label htmlFor="isActive" className="text-slate-300 font-medium cursor-pointer select-none">
             Kích hoạt danh mục
           </label>
         </div>
-        <p className="text-gray-500 text-xs -mt-2 ml-8">
+        <p className="text-slate-400 text-xs -mt-2 ml-8">
           Chỉ danh mục được kích hoạt mới hiển thị trên website
         </p>
 
@@ -213,7 +213,7 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
           <button
             type="button"
             onClick={onBack}
-            className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
+            className="px-5 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition disabled:opacity-50"
             disabled={loading}
           >
             Hủy
@@ -221,7 +221,7 @@ const AddCategory: React.FC<AddCategoryProps> = ({ onBack, onSave, category, cat
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-5 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
               <>

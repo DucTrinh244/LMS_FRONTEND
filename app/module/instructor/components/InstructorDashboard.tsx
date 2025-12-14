@@ -15,16 +15,11 @@ import {
   Users
 } from "lucide-react";
 import { useState, type JSX } from "react";
-import AnnouncementsContent from "~/module/instructor/components/AnnouncementsContent";
-import AssignmentsContent from "~/module/instructor/components/AssignmentsContent";
 import DashboardContent from "~/module/instructor/components/DashboardContent";
 import EarningsContent from "~/module/instructor/components/EarningsContent";
 import LogoutContent from "~/module/instructor/components/LogoutContent";
 import PayoutContent from "~/module/instructor/components/PayoutContent";
 import QuizResultsContent from "~/module/instructor/components/QuizResultsContent";
-import SettingsContent from "~/module/instructor/components/SettingsContent";
-import StatementsContent from "~/module/instructor/components/StatementsContent";
-import SupportTicketsContent from "~/module/instructor/components/SupportTicketsContent";
 import CertificatesContent from "~/module/instructor/pages/certificate/CertificatesContent";
 import MessagesContent from "~/module/instructor/pages/chat/MessagesContent";
 import CoursesContent from "~/module/instructor/pages/course/CoursesContent";
@@ -36,18 +31,13 @@ type MenuItem =
   | 'Dashboard'
   | 'My Profile'
   | 'Courses'
-  | 'Announcements'
-  | 'Assignments'
   | 'Students'
   | 'Quiz'
   | 'Quiz Results'
   | 'Certificates'
   | 'Earnings'
   | 'Payout'
-  | 'Statements'
   | 'Messages'
-  | 'Support Tickets'
-  | 'Settings'
   | 'Logout';
 
 // Placeholder content components (for cases where actual components are not provided)
@@ -65,17 +55,13 @@ const InstructorDashboard = () => {
     { icon: <LayoutDashboard className="w-4 h-4" />, label: 'Dashboard' },
     { icon: <User className="w-4 h-4" />, label: 'My Profile' },
     { icon: <BookOpen className="w-4 h-4" />, label: 'Courses' },
-    { icon: <Megaphone className="w-4 h-4" />, label: 'Announcements' },
-    { icon: <FileText className="w-4 h-4" />, label: 'Assignments' },
     { icon: <Users className="w-4 h-4" />, label: 'Students' },
     { icon: <HelpCircle className="w-4 h-4" />, label: 'Quiz' },
     { icon: <FileCheck className="w-4 h-4" />, label: 'Quiz Results' },
     { icon: <Award className="w-4 h-4" />, label: 'Certificates' },
     { icon: <DollarSign className="w-4 h-4" />, label: 'Earnings' },
     { icon: <CreditCard className="w-4 h-4" />, label: 'Payout' },
-    { icon: <FileCheck className="w-4 h-4" />, label: 'Statements' },
-    { icon: <MessageSquare className="w-4 h-4" />, label: 'Messages' },
-    { icon: <HelpCircle className="w-4 h-4" />, label: 'Support Tickets' }
+    { icon: <MessageSquare className="w-4 h-4" />, label: 'Messages' }
   ];
 
   // Map menu items to content components
@@ -83,18 +69,13 @@ const InstructorDashboard = () => {
     Dashboard: <DashboardContent />,
     'My Profile': <MyProfileContent />,
     Courses: <CoursesContent />,
-    Announcements: <AnnouncementsContent />,
-    Assignments: <AssignmentsContent />,
     Students: <StudentsContent />,
     Quiz: <QuizContent />,
     'Quiz Results': <QuizResultsContent />,
     Certificates: <CertificatesContent />,
     Earnings: <EarningsContent />,
     Payout: <PayoutContent />,
-    Statements: <StatementsContent />,
     Messages: <MessagesContent />,
-    'Support Tickets': <SupportTicketsContent />,
-    Settings: <SettingsContent />,
     Logout: <LogoutContent />
   };
 
@@ -134,17 +115,6 @@ const InstructorDashboard = () => {
                     Account Settings
                   </h3>
                   <nav className="space-y-1">
-                    <button
-                      onClick={() => setActiveMenu('Settings')}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition text-base ${
-                        activeMenu === 'Settings'
-                          ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold'
-                          : 'text-slate-300 hover:bg-slate-700 hover:text-violet-400'
-                      }`}
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span>Settings</span>
-                    </button>
                     <button
                       onClick={() => setActiveMenu('Logout')}
                       className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition text-base ${
